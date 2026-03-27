@@ -1,0 +1,441 @@
+{
+  "event_id": "a18790f7",
+  "run_id": "20260327_122529",
+  "agent": "Explorer",
+  "event_type": "eda",
+  "timestamp": "2026-03-27T12:25:29.690142+00:00",
+  "payload": {
+    "dataset_info": {
+      "shape": [
+        2000,
+        15
+      ],
+      "columns": [
+        "customer_id",
+        "gender",
+        "age",
+        "region",
+        "tenure",
+        "contract",
+        "internet_service",
+        "payment_method",
+        "monthly_bill",
+        "total_charges",
+        "total_charges_v2",
+        "num_support_calls",
+        "avg_call_duration",
+        "data_usage_gb",
+        "churn"
+      ],
+      "dtypes": {
+        "customer_id": "object",
+        "gender": "object",
+        "age": "int64",
+        "region": "object",
+        "tenure": "int64",
+        "contract": "object",
+        "internet_service": "object",
+        "payment_method": "object",
+        "monthly_bill": "float64",
+        "total_charges": "float64",
+        "total_charges_v2": "float64",
+        "num_support_calls": "int64",
+        "avg_call_duration": "float64",
+        "data_usage_gb": "float64",
+        "churn": "int64"
+      },
+      "head": [
+        {
+          "customer_id": "CUST_00000",
+          "gender": "Male",
+          "age": 36,
+          "region": "West",
+          "tenure": 42,
+          "contract": "Month-to-month",
+          "internet_service": "DSL",
+          "payment_method": "Mailed check",
+          "monthly_bill": 67.98,
+          "total_charges": 2871.79,
+          "total_charges_v2": 2895.9,
+          "num_support_calls": 7,
+          "avg_call_duration": 6.04,
+          "data_usage_gb": 21.93,
+          "churn": 1
+        },
+        {
+          "customer_id": "CUST_00001",
+          "gender": "Male",
+          "age": 34,
+          "region": "Central",
+          "tenure": 57,
+          "contract": "Month-to-month",
+          "internet_service": "Fiber optic",
+          "payment_method": "Bank transfer",
+          "monthly_bill": 69.13,
+          "total_charges": 4002.4,
+          "total_charges_v2": 4036.78,
+          "num_support_calls": 6,
+          "avg_call_duration": 5.3,
+          "data_usage_gb": 3.67,
+          "churn": 1
+        },
+        {
+          "customer_id": "CUST_00002",
+          "gender": "Male",
+          "age": 47,
+          "region": "Central",
+          "tenure": 42,
+          "contract": "Two year",
+          "internet_service": "Fiber optic",
+          "payment_method": "Mailed check",
+          "monthly_bill": 78.53,
+          "total_charges": 3358.99,
+          "total_charges_v2": 3405.65,
+          "num_support_calls": 13,
+          "avg_call_duration": 5.6,
+          "data_usage_gb": 2.31,
+          "churn": 0
+        },
+        {
+          "customer_id": "CUST_00003",
+          "gender": "Male",
+          "age": 45,
+          "region": "South",
+          "tenure": 89,
+          "contract": "One year",
+          "internet_service": "Fiber optic",
+          "payment_method": "Electronic check",
+          "monthly_bill": 72.43,
+          "total_charges": 6423.89,
+          "total_charges_v2": NaN,
+          "num_support_calls": 9,
+          "avg_call_duration": 4.39,
+          "data_usage_gb": 16.55,
+          "churn": 0
+        },
+        {
+          "customer_id": "CUST_00004",
+          "gender": "Male",
+          "age": 25,
+          "region": "North",
+          "tenure": 70,
+          "contract": "One year",
+          "internet_service": "No",
+          "payment_method": "Bank transfer",
+          "monthly_bill": 15.04,
+          "total_charges": 1062.41,
+          "total_charges_v2": 1090.63,
+          "num_support_calls": 5,
+          "avg_call_duration": 4.57,
+          "data_usage_gb": 1.11,
+          "churn": 0
+        }
+      ],
+      "path": "C:\\Users\\user\\agent_system\\data\\customer_churn.csv"
+    },
+    "statistics": {
+      "numeric_columns": [
+        "age",
+        "tenure",
+        "monthly_bill",
+        "total_charges",
+        "total_charges_v2",
+        "num_support_calls",
+        "avg_call_duration",
+        "data_usage_gb",
+        "churn"
+      ],
+      "categorical_columns": [
+        "customer_id",
+        "gender",
+        "region",
+        "contract",
+        "internet_service",
+        "payment_method"
+      ],
+      "numeric_stats": {
+        "age": {
+          "mean": 41.771,
+          "std": 11.7643,
+          "min": 18.0,
+          "25%": 33.0,
+          "50%": 42.0,
+          "75%": 50.0,
+          "max": 79.0,
+          "skew": 0.1534,
+          "kurtosis": -0.2097
+        },
+        "tenure": {
+          "mean": 36.6485,
+          "std": 22.5641,
+          "min": 0.0,
+          "25%": 19.0,
+          "50%": 36.0,
+          "75%": 51.0,
+          "max": 118.0,
+          "skew": 0.3153,
+          "kurtosis": -0.2392
+        },
+        "monthly_bill": {
+          "mean": 66.3028,
+          "std": 25.6108,
+          "min": 10.0,
+          "25%": 51.4575,
+          "50%": 64.085,
+          "75%": 79.4025,
+          "max": 297.44,
+          "skew": 2.5966,
+          "kurtosis": 18.1817
+        },
+        "total_charges": {
+          "mean": 2387.8471,
+          "std": 1706.5587,
+          "min": -109.51,
+          "25%": 1094.495,
+          "50%": 2204.36,
+          "75%": 3361.4675,
+          "max": 10466.84,
+          "skew": 0.8606,
+          "kurtosis": 0.9552
+        },
+        "total_charges_v2": {
+          "mean": 2421.3268,
+          "std": 1722.6741,
+          "min": -128.71,
+          "25%": 1132.24,
+          "50%": 2250.905,
+          "75%": 3412.5,
+          "max": 9979.04,
+          "skew": 0.8339,
+          "kurtosis": 0.8497
+        },
+        "num_support_calls": {
+          "mean": 8.645,
+          "std": 3.2031,
+          "min": 0.0,
+          "25%": 6.0,
+          "50%": 8.0,
+          "75%": 11.0,
+          "max": 21.0,
+          "skew": 0.3597,
+          "kurtosis": 0.1598
+        },
+        "avg_call_duration": {
+          "mean": 4.9495,
+          "std": 1.9992,
+          "min": 0.5,
+          "25%": 3.57,
+          "50%": 4.955,
+          "75%": 6.26,
+          "max": 11.61,
+          "skew": 0.0959,
+          "kurtosis": -0.2036
+        },
+        "data_usage_gb": {
+          "mean": 5.0508,
+          "std": 5.0293,
+          "min": 0.0,
+          "25%": 1.44,
+          "50%": 3.6,
+          "75%": 6.915,
+          "max": 38.83,
+          "skew": 1.8439,
+          "kurtosis": 4.4761
+        },
+        "churn": {
+          "mean": 0.4995,
+          "std": 0.5001,
+          "min": 0.0,
+          "25%": 0.0,
+          "50%": 0.0,
+          "75%": 1.0,
+          "max": 1.0,
+          "skew": 0.002,
+          "kurtosis": -2.002
+        }
+      },
+      "categorical_stats": {
+        "customer_id": {
+          "unique": 2000,
+          "top5": {
+            "CUST_00000": 1,
+            "CUST_00001": 1,
+            "CUST_00002": 1,
+            "CUST_00003": 1,
+            "CUST_00004": 1
+          }
+        },
+        "gender": {
+          "unique": 2,
+          "top5": {
+            "Female": 1024,
+            "Male": 976
+          }
+        },
+        "region": {
+          "unique": 5,
+          "top5": {
+            "Central": 403,
+            "West": 398,
+            "South": 368,
+            "North": 366,
+            "East": 337
+          }
+        },
+        "contract": {
+          "unique": 3,
+          "top5": {
+            "Month-to-month": 1113,
+            "One year": 496,
+            "Two year": 391
+          }
+        },
+        "internet_service": {
+          "unique": 3,
+          "top5": {
+            "Fiber optic": 872,
+            "DSL": 711,
+            "No": 417
+          }
+        },
+        "payment_method": {
+          "unique": 4,
+          "top5": {
+            "Bank transfer": 536,
+            "Credit card": 502,
+            "Electronic check": 484,
+            "Mailed check": 478
+          }
+        }
+      }
+    },
+    "missing": {
+      "total_rows": 2000,
+      "columns_with_missing": {
+        "region": {
+          "count": 128,
+          "pct": 6.4
+        },
+        "total_charges_v2": {
+          "count": 100,
+          "pct": 5.0
+        },
+        "avg_call_duration": {
+          "count": 144,
+          "pct": 7.2
+        },
+        "data_usage_gb": {
+          "count": 221,
+          "pct": 11.05
+        }
+      },
+      "complete_rows": 1472
+    },
+    "class_balance": {
+      "target_column": "churn",
+      "class_distribution": {
+        "0": {
+          "count": 1001,
+          "pct": 50.05
+        },
+        "1": {
+          "count": 999,
+          "pct": 49.95
+        }
+      },
+      "is_imbalanced": false,
+      "minority_pct": 49.95
+    },
+    "correlations": {
+      "top_features_by_target_correlation": {
+        "num_support_calls": 0.1898,
+        "total_charges": -0.1447,
+        "total_charges_v2": -0.1424,
+        "tenure": -0.1144,
+        "monthly_bill": -0.0819,
+        "avg_call_duration": 0.0226,
+        "data_usage_gb": 0.0054,
+        "age": 0.0044
+      },
+      "high_multicollinearity_pairs": [
+        {
+          "col1": "total_charges",
+          "col2": "total_charges_v2",
+          "corr": 0.9999
+        }
+      ]
+    },
+    "outliers": {
+      "outlier_columns": {
+        "age": {
+          "count": 5,
+          "pct": 0.25,
+          "lower_fence": 7.5,
+          "upper_fence": 75.5
+        },
+        "tenure": {
+          "count": 10,
+          "pct": 0.5,
+          "lower_fence": -29.0,
+          "upper_fence": 99.0
+        },
+        "monthly_bill": {
+          "count": 21,
+          "pct": 1.05,
+          "lower_fence": 9.54,
+          "upper_fence": 121.32
+        },
+        "total_charges": {
+          "count": 42,
+          "pct": 2.1,
+          "lower_fence": -2305.9637,
+          "upper_fence": 6761.9262
+        },
+        "total_charges_v2": {
+          "count": 39,
+          "pct": 1.95,
+          "lower_fence": -2288.15,
+          "upper_fence": 6832.89
+        },
+        "num_support_calls": {
+          "count": 8,
+          "pct": 0.4,
+          "lower_fence": -1.5,
+          "upper_fence": 18.5
+        },
+        "avg_call_duration": {
+          "count": 11,
+          "pct": 0.55,
+          "lower_fence": -0.465,
+          "upper_fence": 10.295
+        },
+        "data_usage_gb": {
+          "count": 95,
+          "pct": 4.75,
+          "lower_fence": -6.7725,
+          "upper_fence": 15.1275
+        }
+      },
+      "total_rows": 2000
+    },
+    "feature_recs": {
+      "recommendations": {
+        "customer_id": "label_encode_or_drop",
+        "gender": "one_hot_encode",
+        "age": "scale_numeric",
+        "region": "one_hot_encode",
+        "tenure": "scale_numeric",
+        "contract": "one_hot_encode",
+        "internet_service": "one_hot_encode",
+        "payment_method": "one_hot_encode",
+        "monthly_bill": "scale_numeric",
+        "total_charges": "scale_numeric",
+        "total_charges_v2": "scale_numeric",
+        "num_support_calls": "scale_numeric",
+        "avg_call_duration": "scale_numeric",
+        "data_usage_gb": "scale_numeric"
+      }
+    },
+    "narrative": "[Explorer \u2014 no API key] Received: Dataset path: C:\\Users\\user\\agent_system\\data\\customer_churn.csv\nTarget column: churn\n\nPlease use all available EDA tools on this dataset. After calling the tools, write a clear summary report."
+  }
+}

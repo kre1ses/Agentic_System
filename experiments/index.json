@@ -1,0 +1,34 @@
+{
+  "20260327_122529": {
+    "run_id": "20260327_122529",
+    "total_events": 7,
+    "model_experiments": 1,
+    "critiques_issued": 3,
+    "best_model": "random_forest",
+    "best_cv_roc_auc": 0.6576
+  },
+  "20260327_122612": {
+    "run_id": "20260327_122612",
+    "total_events": 7,
+    "model_experiments": 1,
+    "critiques_issued": 3,
+    "best_model": "random_forest",
+    "best_cv_roc_auc": 0.6576
+  },
+  "20260327_122749": {
+    "run_id": "20260327_122749",
+    "total_events": 7,
+    "model_experiments": 1,
+    "critiques_issued": 3,
+    "best_model": "random_forest",
+    "best_cv_roc_auc": 0.6449
+  },
+  "20260327_130719": {
+    "run_id": "20260327_130719",
+    "total_events": 7,
+    "model_experiments": 1,
+    "critiques_issued": 3,
+    "best_model": "random_forest",
+    "best_cv_mse": 10298.4886
+  }
+}

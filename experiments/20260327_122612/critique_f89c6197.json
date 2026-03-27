@@ -1,0 +1,15 @@
+{
+  "event_id": "f89c6197",
+  "run_id": "20260327_122612",
+  "agent": "Critic",
+  "event_type": "critique",
+  "timestamp": "2026-03-27T12:26:12.085535+00:00",
+  "payload": {
+    "approved": true,
+    "severity": "minor",
+    "issues": [],
+    "suggestions": [
+      "[Critic \u2014 no API key] Received: Review the following EDA report for completeness and correctness.\n\n{\"dataset_info\": {\"shape\": [2000, 15], \"columns\": [\"customer_id\", \"gender\", \"age\", \"region\", \"tenure\", \"contract\", \"internet_service\""
+    ]
+  }
+}

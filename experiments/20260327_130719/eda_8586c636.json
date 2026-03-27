@@ -1,0 +1,443 @@
+{
+  "event_id": "8586c636",
+  "run_id": "20260327_130719",
+  "agent": "Explorer",
+  "event_type": "eda",
+  "timestamp": "2026-03-27T13:07:19.751071+00:00",
+  "payload": {
+    "dataset_info": {
+      "shape": [
+        36671,
+        15
+      ],
+      "columns": [
+        "name",
+        "_id",
+        "host_name",
+        "location_cluster",
+        "location",
+        "lat",
+        "lon",
+        "type_house",
+        "sum",
+        "min_days",
+        "amt_reviews",
+        "last_dt",
+        "avg_reviews",
+        "total_host",
+        "target"
+      ],
+      "dtypes": {
+        "name": "object",
+        "_id": "int64",
+        "host_name": "object",
+        "location_cluster": "object",
+        "location": "object",
+        "lat": "float64",
+        "lon": "float64",
+        "type_house": "object",
+        "sum": "int64",
+        "min_days": "int64",
+        "amt_reviews": "int64",
+        "last_dt": "object",
+        "avg_reviews": "float64",
+        "total_host": "int64",
+        "target": "int64"
+      },
+      "head": [
+        {
+          "name": "Belle Harbor 4 BR 2 bath- 1 bl from Beach",
+          "_id": 40327248,
+          "host_name": "Sarina",
+          "location_cluster": "Queens",
+          "location": "Neponsit",
+          "lat": 40.57215,
+          "lon": -73.85822,
+          "type_house": "Entire home/apt",
+          "sum": 350,
+          "min_days": 2,
+          "amt_reviews": 5,
+          "last_dt": "2019-07-07",
+          "avg_reviews": 2.88,
+          "total_host": 1,
+          "target": 334
+        },
+        {
+          "name": "Come see Brooklyn, New York",
+          "_id": 13617520,
+          "host_name": "Howard T.",
+          "location_cluster": "Brooklyn",
+          "location": "Clinton Hill",
+          "lat": 40.69172,
+          "lon": -73.96934,
+          "type_house": "Shared room",
+          "sum": 40,
+          "min_days": 5,
+          "amt_reviews": 8,
+          "last_dt": "2015-02-25",
+          "avg_reviews": 0.13,
+          "total_host": 1,
+          "target": 0
+        },
+        {
+          "name": "Large 2Br on W71st & Columbus Feb 19-28",
+          "_id": 26754726,
+          "host_name": "Julie",
+          "location_cluster": "Manhattan",
+          "location": "Upper West Side",
+          "lat": 40.77673,
+          "lon": -73.98011,
+          "type_house": "Entire home/apt",
+          "sum": 200,
+          "min_days": 5,
+          "amt_reviews": 0,
+          "last_dt": NaN,
+          "avg_reviews": NaN,
+          "total_host": 1,
+          "target": 0
+        },
+        {
+          "name": "Perfect bedroom. Near Subways Columbia CityCollege",
+          "_id": 16721721,
+          "host_name": "Federico",
+          "location_cluster": "Manhattan",
+          "location": "Harlem",
+          "lat": 40.8153,
+          "lon": -73.9508,
+          "type_house": "Private room",
+          "sum": 65,
+          "min_days": 2,
+          "amt_reviews": 18,
+          "last_dt": "2018-11-04",
+          "avg_reviews": 0.64,
+          "total_host": 1,
+          "target": 0
+        },
+        {
+          "name": "Cozy Sun Filled Fresh Guest Room in Artsy Bushwick",
+          "_id": 22246463,
+          "host_name": "Lisa",
+          "location_cluster": "Brooklyn",
+          "location": "Bushwick",
+          "lat": 40.7023,
+          "lon": -73.92935,
+          "type_house": "Private room",
+          "sum": 99,
+          "min_days": 2,
+          "amt_reviews": 26,
+          "last_dt": "2019-06-23",
+          "avg_reviews": 0.76,
+          "total_host": 1,
+          "target": 155
+        }
+      ],
+      "path": "C:\\Users\\user\\agent_system\\data\\train.csv"
+    },
+    "statistics": {
+      "numeric_columns": [
+        "_id",
+        "lat",
+        "lon",
+        "sum",
+        "min_days",
+        "amt_reviews",
+        "avg_reviews",
+        "total_host",
+        "target"
+      ],
+      "categorical_columns": [
+        "name",
+        "host_name",
+        "location_cluster",
+        "location",
+        "type_house",
+        "last_dt"
+      ],
+      "numeric_stats": {
+        "_id": {
+          "mean": 67204325.6872,
+          "std": 78281468.3854,
+          "min": 2438.0,
+          "25%": 7780024.5,
+          "50%": 30532557.0,
+          "75%": 107434423.0,
+          "max": 274321313.0,
+          "skew": 1.2151,
+          "kurtosis": 0.1973
+        },
+        "lat": {
+          "mean": 40.7291,
+          "std": 0.0547,
+          "min": 40.4998,
+          "25%": 40.6901,
+          "50%": 40.7231,
+          "75%": 40.7633,
+          "max": 40.9123,
+          "skew": 0.2388,
+          "kurtosis": 0.1486
+        },
+        "lon": {
+          "mean": -73.952,
+          "std": 0.0462,
+          "min": -74.2444,
+          "25%": -73.983,
+          "50%": -73.9556,
+          "75%": -73.9359,
+          "max": -73.713,
+          "skew": 1.2733,
+          "kurtosis": 4.8871
+        },
+        "sum": {
+          "mean": 152.1423,
+          "std": 239.108,
+          "min": 0.0,
+          "25%": 69.0,
+          "50%": 106.0,
+          "75%": 175.0,
+          "max": 10000.0,
+          "skew": 19.5389,
+          "kurtosis": 609.8941
+        },
+        "min_days": {
+          "mean": 7.0532,
+          "std": 21.5396,
+          "min": 1.0,
+          "25%": 1.0,
+          "50%": 3.0,
+          "75%": 5.0,
+          "max": 1250.0,
+          "skew": 23.188,
+          "kurtosis": 909.3987
+        },
+        "amt_reviews": {
+          "mean": 23.4337,
+          "std": 44.7036,
+          "min": 0.0,
+          "25%": 1.0,
+          "50%": 5.0,
+          "75%": 24.0,
+          "max": 629.0,
+          "skew": 3.6396,
+          "kurtosis": 18.7154
+        },
+        "avg_reviews": {
+          "mean": 1.3656,
+          "std": 1.644,
+          "min": 0.01,
+          "25%": 0.19,
+          "50%": 0.72,
+          "75%": 2.01,
+          "max": 20.94,
+          "skew": 2.1874,
+          "kurtosis": 7.8352
+        },
+        "total_host": {
+          "mean": 7.0477,
+          "std": 32.5954,
+          "min": 1.0,
+          "25%": 1.0,
+          "50%": 1.0,
+          "75%": 2.0,
+          "max": 327.0,
+          "skew": 8.0186,
+          "kurtosis": 69.0225
+        },
+        "target": {
+          "mean": 112.7666,
+          "std": 131.5833,
+          "min": 0.0,
+          "25%": 0.0,
+          "50%": 45.0,
+          "75%": 227.0,
+          "max": 365.0,
+          "skew": 0.7634,
+          "kurtosis": -0.9969
+        }
+      },
+      "categorical_stats": {
+        "name": {
+          "unique": 36076,
+          "top5": {
+            "Hillside Hotel": 14,
+            "New york Multi-unit building": 14,
+            "Private Room": 11,
+            "Brooklyn Apartment": 10,
+            "Home away from home": 10
+          }
+        },
+        "host_name": {
+          "unique": 9629,
+          "top5": {
+            "Michael": 308,
+            "David": 306,
+            "Sonder (NYC)": 238,
+            "John": 223,
+            "Alex": 205
+          }
+        },
+        "location_cluster": {
+          "unique": 5,
+          "top5": {
+            "Manhattan": 16193,
+            "Brooklyn": 15069,
+            "Queens": 4289,
+            "Bronx": 836,
+            "Staten Island": 284
+          }
+        },
+        "location": {
+          "unique": 220,
+          "top5": {
+            "Williamsburg": 2964,
+            "Bedford-Stuyvesant": 2755,
+            "Harlem": 2002,
+            "Bushwick": 1865,
+            "Upper West Side": 1498
+          }
+        },
+        "type_house": {
+          "unique": 3,
+          "top5": {
+            "Entire home/apt": 19013,
+            "Private room": 16783,
+            "Shared room": 875
+          }
+        },
+        "last_dt": {
+          "unique": 1694,
+          "top5": {
+            "2019-06-23": 1034,
+            "2019-07-01": 1024,
+            "2019-06-30": 1012,
+            "2019-06-24": 668,
+            "2019-07-07": 524
+          }
+        }
+      }
+    },
+    "missing": {
+      "total_rows": 36671,
+      "columns_with_missing": {
+        "name": {
+          "count": 9,
+          "pct": 0.02
+        },
+        "host_name": {
+          "count": 18,
+          "pct": 0.05
+        },
+        "last_dt": {
+          "count": 7502,
+          "pct": 20.46
+        },
+        "avg_reviews": {
+          "count": 7502,
+          "pct": 20.46
+        }
+      },
+      "complete_rows": 29152
+    },
+    "target_distribution": {
+      "target_column": "target",
+      "mean": 112.7666,
+      "median": 45.0,
+      "std": 131.5833,
+      "min": 0.0,
+      "max": 365.0,
+      "skew": 0.7634,
+      "pct_zero": 35.86,
+      "percentiles": {
+        "25%": 0.0,
+        "50%": 45.0,
+        "75%": 227.0,
+        "90%": 337.0,
+        "95%": 359.0
+      }
+    },
+    "correlations": {
+      "top_features_by_target_correlation": {
+        "total_host": 0.2244,
+        "_id": 0.2054,
+        "avg_reviews": 0.1869,
+        "amt_reviews": 0.1683,
+        "min_days": 0.144,
+        "lon": 0.0839,
+        "sum": 0.0772,
+        "lat": -0.013
+      },
+      "high_multicollinearity_pairs": []
+    },
+    "outliers": {
+      "outlier_columns": {
+        "_id": {
+          "count": 1103,
+          "pct": 3.01,
+          "lower_fence": -141701573.25,
+          "upper_fence": 256916020.75
+        },
+        "lat": {
+          "count": 326,
+          "pct": 0.89,
+          "lower_fence": 40.5803,
+          "upper_fence": 40.873
+        },
+        "lon": {
+          "count": 2135,
+          "pct": 5.82,
+          "lower_fence": -74.0536,
+          "upper_fence": -73.8652
+        },
+        "sum": {
+          "count": 2216,
+          "pct": 6.04,
+          "lower_fence": -90.0,
+          "upper_fence": 334.0
+        },
+        "min_days": {
+          "count": 4920,
+          "pct": 13.42,
+          "lower_fence": -5.0,
+          "upper_fence": 11.0
+        },
+        "amt_reviews": {
+          "count": 4557,
+          "pct": 12.43,
+          "lower_fence": -33.5,
+          "upper_fence": 58.5
+        },
+        "avg_reviews": {
+          "count": 1342,
+          "pct": 3.66,
+          "lower_fence": -2.54,
+          "upper_fence": 4.74
+        },
+        "total_host": {
+          "count": 5330,
+          "pct": 14.53,
+          "lower_fence": -0.5,
+          "upper_fence": 3.5
+        }
+      },
+      "total_rows": 36671
+    },
+    "feature_recs": {
+      "recommendations": {
+        "name": "label_encode_or_drop",
+        "_id": "scale_numeric",
+        "host_name": "label_encode_or_drop",
+        "location_cluster": "one_hot_encode",
+        "location": "label_encode_or_drop",
+        "lat": "scale_numeric",
+        "lon": "scale_numeric",
+        "type_house": "one_hot_encode",
+        "sum": "scale_numeric",
+        "min_days": "scale_numeric",
+        "amt_reviews": "scale_numeric",
+        "last_dt": "label_encode_or_drop",
+        "avg_reviews": "scale_numeric",
+        "total_host": "scale_numeric"
+      }
+    },
+    "narrative": "[Explorer \u2014 no API key] Received: Dataset path: C:\\Users\\user\\agent_system\\data\\train.csv\nTarget column: target\n\nPlease use all available EDA tools on this dataset. After calling the tools, write a clear summary report."
+  }
+}

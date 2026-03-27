@@ -1,0 +1,204 @@
+"""
+Pre-seeded knowledge chunks about binary classification best practices,
+Kaggle competition strategies, and ML engineering patterns.
+Each chunk is a dict: {"text": str, "source": str, "tags": list[str]}
+"""
+
+KAGGLE_KNOWLEDGE_CHUNKS = [
+    # ── EDA ──────────────────────────────────────────────────────────────
+    {
+        "text": (
+            "Always start EDA by checking the target variable distribution. "
+            "In binary classification with severe class imbalance (minority < 10%), "
+            "use SMOTE or class_weight='balanced'. ROC-AUC is more informative than "
+            "accuracy for imbalanced targets."
+        ),
+        "source": "kaggle_best_practices",
+        "tags": ["eda", "imbalance", "metrics"],
+    },
+    {
+        "text": (
+            "Columns with > 50% missing values are usually safe to drop. "
+            "For moderate missingness (< 30%), median imputation works for numeric "
+            "features and mode imputation for categoricals. "
+            "Adding a binary 'was_missing' indicator often improves model accuracy."
+        ),
+        "source": "kaggle_best_practices",
+        "tags": ["eda", "missing_values", "feature_engineering"],
+    },
+    {
+        "text": (
+            "High correlation between features (|r| > 0.95) causes multicollinearity. "
+            "Drop the feature with lower target correlation. "
+            "Variance Inflation Factor (VIF) > 10 signals problematic multicollinearity."
+        ),
+        "source": "kaggle_best_practices",
+        "tags": ["eda", "feature_selection", "multicollinearity"],
+    },
+    {
+        "text": (
+            "For categorical features with > 20 unique values, use target encoding "
+            "(mean of target per category) instead of one-hot encoding. "
+            "Always apply leave-one-out or cross-fold target encoding to prevent leakage."
+        ),
+        "source": "kaggle_best_practices",
+        "tags": ["feature_engineering", "categorical", "encoding"],
+    },
+    # ── Feature Engineering ──────────────────────────────────────────────
+    {
+        "text": (
+            "Polynomial features (degree 2) for numeric columns often reveal "
+            "non-linear interactions. Limit to the top-5 most correlated features "
+            "to avoid exponential dimensionality increase."
+        ),
+        "source": "kaggle_best_practices",
+        "tags": ["feature_engineering", "polynomials"],
+    },
+    {
+        "text": (
+            "Log-transform right-skewed numeric features (skewness > 1) to reduce "
+            "outlier influence and help linear models. Use log1p to handle zero values."
+        ),
+        "source": "kaggle_best_practices",
+        "tags": ["feature_engineering", "skewness", "preprocessing"],
+    },
+    {
+        "text": (
+            "Binning continuous variables (e.g., age groups) can expose monotone "
+            "non-linearities to linear models and reduce noise. Use quantile-based "
+            "bins (pd.qcut) for equal-frequency bins."
+        ),
+        "source": "kaggle_best_practices",
+        "tags": ["feature_engineering", "binning"],
+    },
+    # ── Model Selection ───────────────────────────────────────────────────
+    {
+        "text": (
+            "For tabular binary classification, Gradient Boosting (XGBoost, LightGBM) "
+            "consistently outperforms Random Forest. "
+            "Start with LightGBM: fast, handles missing values natively, "
+            "and requires less feature preprocessing."
+        ),
+        "source": "kaggle_best_practices",
+        "tags": ["model_selection", "gradient_boosting"],
+    },
+    {
+        "text": (
+            "Logistic Regression is an excellent baseline that reveals whether "
+            "engineered features are linearly separable. "
+            "If LR achieves > 0.80 ROC-AUC, gradient boosting often reaches > 0.85."
+        ),
+        "source": "kaggle_best_practices",
+        "tags": ["model_selection", "baseline", "logistic_regression"],
+    },
+    {
+        "text": (
+            "Use StratifiedKFold (5 folds) for cross-validation on binary targets. "
+            "Stratification ensures each fold has the same class ratio as the full dataset. "
+            "Shuffle data before splitting when rows may be sorted by time or target."
+        ),
+        "source": "kaggle_best_practices",
+        "tags": ["validation", "cross_validation"],
+    },
+    {
+        "text": (
+            "Ensembling: average the predicted probabilities from 3-5 diverse models "
+            "(LR + RF + GBM) for a 1-3% AUC improvement. "
+            "Stacking (using model outputs as meta-features) is more complex but "
+            "yields the best results in Kaggle competitions."
+        ),
+        "source": "kaggle_best_practices",
+        "tags": ["model_selection", "ensembling", "stacking"],
+    },
+    # ── Evaluation ────────────────────────────────────────────────────────
+    {
+        "text": (
+            "Primary metric for binary classification: ROC-AUC (threshold-independent). "
+            "Secondary: F1-score (harmonic mean of precision and recall). "
+            "For severe imbalance, use PR-AUC (area under precision-recall curve) "
+            "instead of ROC-AUC, which can be misleadingly optimistic."
+        ),
+        "source": "kaggle_best_practices",
+        "tags": ["evaluation", "metrics"],
+    },
+    {
+        "text": (
+            "Calibrate model probabilities with Platt scaling or isotonic regression "
+            "when downstream decisions use raw probabilities (e.g., business thresholds). "
+            "Brier score measures calibration quality."
+        ),
+        "source": "kaggle_best_practices",
+        "tags": ["evaluation", "calibration"],
+    },
+    # ── Pipeline / Leakage ───────────────────────────────────────────────
+    {
+        "text": (
+            "Data leakage is the #1 source of over-optimistic models. "
+            "Fit all transformers (scalers, encoders, imputers) ONLY on training data. "
+            "Never use test-set statistics during preprocessing. "
+            "Use sklearn Pipeline to enforce this."
+        ),
+        "source": "kaggle_best_practices",
+        "tags": ["pipeline", "leakage", "preprocessing"],
+    },
+    {
+        "text": (
+            "Feature selection after cross-validation: use RFECV or permutation importance "
+            "computed on the hold-out fold, not on the training fold. "
+            "Selecting features based on full-dataset importance leaks information."
+        ),
+        "source": "kaggle_best_practices",
+        "tags": ["feature_selection", "leakage"],
+    },
+    # ── BDI / ReAct patterns ─────────────────────────────────────────────
+    {
+        "text": (
+            "ReAct agent pattern: at each step, the agent (1) Reasons about the current "
+            "state, (2) Acts by calling a tool, and (3) Observes the result before "
+            "deciding the next action. This prevents hallucinated tool calls."
+        ),
+        "source": "agent_architecture",
+        "tags": ["agent", "react", "architecture"],
+    },
+    {
+        "text": (
+            "Planner-Executor-Critic loop: "
+            "Planner decomposes the goal into ordered subtasks. "
+            "Executor performs each subtask using tools. "
+            "Critic evaluates the output and provides corrective feedback. "
+            "Repeat until quality threshold is reached."
+        ),
+        "source": "agent_architecture",
+        "tags": ["agent", "planning", "critic"],
+    },
+    {
+        "text": (
+            "Agent memory types: "
+            "(1) In-context: the current conversation history. "
+            "(2) External short-term: a shared scratchpad between agents. "
+            "(3) Long-term: a persistent store (database / files) of past experiments "
+            "and decisions, retrieved via RAG."
+        ),
+        "source": "agent_architecture",
+        "tags": ["agent", "memory", "architecture"],
+    },
+    # ── Safety ────────────────────────────────────────────────────────────
+    {
+        "text": (
+            "Prompt injection defence: never interpolate unvalidated user text directly "
+            "into system prompts. Use a separate 'data' field and instruct the model "
+            "to treat it as data, not instructions."
+        ),
+        "source": "agent_security",
+        "tags": ["safety", "prompt_injection"],
+    },
+    {
+        "text": (
+            "Sandboxed code execution: run LLM-generated code in a subprocess with "
+            "a timeout, restricted imports (no socket, no os.system), and resource "
+            "limits (ulimit or container). Never execute code with eval() directly."
+        ),
+        "source": "agent_security",
+        "tags": ["safety", "sandboxing", "code_execution"],
+    },
+]

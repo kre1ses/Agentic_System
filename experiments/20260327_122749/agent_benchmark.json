@@ -1,0 +1,29 @@
+{
+  "run_id": "20260327_122749",
+  "timestamp": "2026-03-27T12:27:51.342783+00:00",
+  "total_events": 7,
+  "agent_participation": {
+    "Planner": 1,
+    "Explorer": 1,
+    "Critic": 3,
+    "Engineer": 1,
+    "Builder": 1
+  },
+  "critique": {
+    "total_critiques": 3,
+    "first_pass_approvals": 3,
+    "convergence_rate": 1.0
+  },
+  "models": {
+    "experiments_run": 1,
+    "auc_trajectory": [
+      0.6449
+    ],
+    "best_cv_roc_auc": 0.6449,
+    "auc_improvement": null
+  },
+  "planning": {
+    "planned_steps": 8,
+    "unique_agents_used": 5
+  }
+}
