@@ -1,7 +1,7 @@
 """
 Planner agent.
 
-Decomposes the binary-classification task into an ordered list of subtasks
+Decomposes the regression task into an ordered list of subtasks
 and returns a structured JSON execution plan.
 """
 import json
@@ -16,7 +16,7 @@ class PlannerAgent(BaseAgent):
         self.name = "Planner"
         self.role = (
             "You are a senior ML architect. "
-            "Your job is to decompose a binary classification task into a clear, "
+            "Your job is to decompose a regression task into a clear, "
             "ordered list of subtasks for a team of specialised agents: "
             "Explorer (EDA), Engineer (feature engineering), Builder (model training), "
             "and Critic (quality review). "
@@ -43,7 +43,7 @@ class PlannerAgent(BaseAgent):
             "and submission file generation. "
             "Output ONLY valid JSON with key 'plan'."
         )
-        raw = self.run(prompt, rag_query="binary classification pipeline planning")
+        raw = self.run(prompt, rag_query="regression pipeline planning MSE feature engineering model selection")
         # Parse JSON from response
         plan = self._parse_plan(raw)
         self.store.log_plan(plan, agent=self.name)

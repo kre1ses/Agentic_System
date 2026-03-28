@@ -13,15 +13,21 @@ class ModelMetrics:
 
     @staticmethod
     def evaluate_saved_model(model_path: str, dataset_path: str,
-                              target_col: str,
-                              drop_cols: list[str] | None = None) -> dict[str, Any]:
-        """Load a saved sklearn pipeline and evaluate on an 80/20 hold-out split."""
+                              target_col: str) -> dict[str, Any]:
+        """Load a saved sklearn pipeline and evaluate on an 80/20 hold-out split.
+
+        Applies only base preprocessing (date extraction, ID dropping) without
+        engineer-decided drops, so the saved pipeline can select its own features
+        via its fitted ColumnTransformer (remainder='drop').
+        """
         with open(model_path, "rb") as f:
             pipeline = pickle.load(f)
 
         from tools.ml_tools import _prepare_X
         df = pd.read_csv(dataset_path)
-        X = _prepare_X(df, target_col, drop_cols)
+        # Pass drop_cols=None: only target + identifiers are removed.
+        # The pipeline's ColumnTransformer uses only the columns it was trained on.
+        X = _prepare_X(df, target_col, drop_cols=None)
         y = df[target_col]
 
         from sklearn.model_selection import train_test_split

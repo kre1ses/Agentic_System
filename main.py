@@ -126,7 +126,6 @@ def run_pipeline(dataset_path: str, target_col: str,
     if result.get("model_path") and Path(result["model_path"]).exists():
         metrics = ModelMetrics.evaluate_saved_model(
             result["model_path"], dataset_path, target_col,
-            drop_cols=result.get("feature_decisions", {}).get("drop_columns", []),
         )
         print(ModelMetrics.format_report(metrics))
     else:

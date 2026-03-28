@@ -60,7 +60,7 @@ class EngineerAgent(BaseAgent):
 
         raw = self.run(
             prompt,
-            rag_query="feature engineering binary classification encoding scaling leakage",
+            rag_query="feature engineering regression encoding scaling leakage target transformation",
         )
         decisions = self._parse_decisions(raw)
         self.store.log(

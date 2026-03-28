@@ -115,7 +115,8 @@ __MACOSX/
 
 *.pkl
 *.csv
-experiments/models/
 knowledge/.pkl
 data_2/
 *.zip
+experiments/*.json
+experiments/
