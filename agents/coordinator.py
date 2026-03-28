@@ -97,13 +97,15 @@ class CoordinatorAgent(BaseAgent):
         if test_path:
             self._phase("5. Generating Submission")
             from tools.ml_tools import MLTools
+            use_ensemble = final_result.get("model") == "ensemble"
             submission_result = MLTools.generate_submission(
                 train_path=dataset_path,
                 test_path=test_path,
                 target_col=target_col,
-                model_name=final_result.get("model", "gradient_boosting"),
+                model_name=final_result.get("model", "lightgbm"),
                 drop_cols=feature_decisions.get("drop_columns", []),
                 output_path=submission_path,
+                use_ensemble=use_ensemble,
             )
             print(f"  Submission saved : {submission_result.get('submission_path')}")
             print(f"  Predictions      : n={submission_result.get('n_predictions')} | "

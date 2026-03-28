@@ -100,7 +100,12 @@ class Guardrails:
 
     @staticmethod
     def validate_model_name(name: str) -> tuple[bool, str]:
-        allowed = {"logistic_regression", "random_forest", "gradient_boosting"}
+        allowed = {
+            "ridge", "random_forest", "gradient_boosting",
+            "lightgbm", "xgboost", "ensemble",
+            # legacy names
+            "logistic_regression",
+        }
         if name not in allowed:
             return False, f"Model '{name}' not allowed. Choose from {allowed}"
         return True, "ok"
