@@ -71,7 +71,7 @@ evaluation/
 | BDI (Belief-Desire-Intention) | Coordinator phase management |
 | Planner-Executor-Critic | `coordinator.py` outer loop |
 | Supervisor-Worker | Coordinator → sub-agents |
-| Fail-Fast Gate | ValidatorAgent stops pipeline on critical data errors |
+| Fail-Fast Gate | ValidationAgent stops pipeline on critical data errors |
 | Contract-First | ValidationAgent passes typed schema to downstream agents |
 
 ---
@@ -84,7 +84,7 @@ evaluation/
 pip install -r requirements.txt
 ```
 
-### 2. Set your LLM API key
+### 2.1. Set your LLM API key
 
 At least one backend is required for full agent reasoning. Without a key the
 system runs in rule-based fallback mode.
@@ -101,6 +101,14 @@ export VSEGPT_API_KEY=...
 
 # HuggingFace Serverless Inference (free)
 export HF_TOKEN=hf_...
+```
+
+### 2.2. Set your Kaggle API token
+
+Make sure, you have accepted rules of the competition before you run the code.
+
+```bash
+export KAGGLE_API_TOKEN=...
 ```
 
 ### 3. Full end-to-end run (one command)
