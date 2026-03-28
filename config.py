@@ -5,15 +5,16 @@ from pathlib import Path
 BASE_DIR = Path(__file__).parent
 
 # Paths
-DATA_DIR = BASE_DIR / "data"
+DATA_DIR = BASE_DIR / "data_2"
 EXPERIMENTS_DIR = BASE_DIR / "experiments"
 KNOWLEDGE_DIR = BASE_DIR / "knowledge"
 MODELS_DIR = BASE_DIR / "experiments" / "models"
 
-for d in [DATA_DIR, EXPERIMENTS_DIR, KNOWLEDGE_DIR, MODELS_DIR]:
+for d in [EXPERIMENTS_DIR, KNOWLEDGE_DIR, MODELS_DIR]:
     d.mkdir(parents=True, exist_ok=True)
 
 # Dataset (Kaggle competition: rental occupancy regression)
+# Download with: python main.py --kaggle mws-ai-agents-2026
 TRAIN_PATH = str(DATA_DIR / "train.csv")
 TEST_PATH  = str(DATA_DIR / "test.csv")
 SUBMISSION_TEMPLATE = str(DATA_DIR / "sample_submition.csv")

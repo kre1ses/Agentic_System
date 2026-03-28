@@ -113,7 +113,9 @@ outputs/
 .idea/
 __MACOSX/
 
-.pkl
-.csv
+*.pkl
+*.csv
 experiments/models/
 knowledge/.pkl
+data_2/
+*.zip
