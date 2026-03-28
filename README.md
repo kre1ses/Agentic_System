@@ -1,7 +1,7 @@
 # Multi-Agent System
 
 Intelligent multi-agent system for automated regression on tabular (Kaggle-format) datasets.
-Implements the full **Validator → Planner → Explorer → Engineer → Builder ↔ Critic → Reporter** pipeline using the Anthropic Claude API (and OpenRouter / VseGPT / HuggingFace as alternative backends).
+Implements the full **Validator → Planner → Explorer → Engineer → Builder ↔ Critic → Reporter** pipeline using the HuggingFace API (and OpenRouter / VseGPT / Anthropic Claude as alternative backends).
 
 ---
 
@@ -124,10 +124,6 @@ python main.py --kaggle mws-ai-agents-2026 --submit --submit-message "xgboost v1
 python main.py --kaggle mws-ai-agents-2026 --no-llm --submit
 ```
 
-On first run you will be prompted to paste your **Kaggle API token** (JSON) if
-`~/.kaggle/kaggle.json` is not present. Get it from
-**kaggle.com → Settings → API → Create New Token**.
-
 ### 4. Step-by-step
 
 ```bash
@@ -199,18 +195,6 @@ Model assignments per agent (see `config.py`):
 
 ---
 
-## Evaluation Criteria Coverage
-
-| Criterion (20 % each) | Implementation |
-|----------------------|----------------|
-| **Architecture & Interaction** | 8-agent pipeline (Validator + 7) with ReAct/BDI/Planner-Critic patterns; MCP interface; pluggable LLM backends |
-| **Automation & Safety** | Fully automated agent communication; ValidatorAgent fail-fast gate; Guardrails, SafeExecutor sandbox, prompt-injection detection |
-| **Documentation & Transparency** | README, docstrings, per-run JSON event logs, `experiments/` directory, LLM-generated reports in `report/` |
-| **Model Quality & Robustness** | 3-model comparison + StratifiedKFold CV; leakage suspects and ID columns flagged by Validator and dropped by Engineer |
-| **Benchmarking & Deployment** | ModelMetrics (MSE/RMSE/MAE/R²) + AgentEvaluator; saved `.pkl` model; Kaggle submission CSV |
-
----
-
 ## Output Structure
 
 ```
@@ -225,11 +209,11 @@ experiments/
     agent_benchmark.json      — Agent effectiveness report
     final_report.json         — Full consolidated report
   models/
-    random_forest.pkl         — Best trained model
+    model_name.pkl         — Best trained model
 
 report/
   models.md                   — LLM-generated model selection justification
-  llm_rationale.md            — LLM-generated provider / model choice rationale
+  llm_rationale.md            — model choice rationale
 
 knowledge/
   corpus.json                 — RAG knowledge chunks
@@ -247,7 +231,7 @@ Edit `config.py` to change:
 - `MAX_CRITIQUE_ROUNDS` — how many Critic→Executor loops to allow (default: 2)
 - `CODE_TIMEOUT_SEC` — sandbox execution timeout (default: 60 s)
 - `RAG_TOP_K` — number of knowledge chunks retrieved per query (default: 3)
-- `TASK_TYPE` — `"regression"` or `"binary_classification"`
+- `TASK_TYPE` — `"regression"`
 - `TRAIN_PATH` / `TEST_PATH` — default dataset paths
 
 ---

@@ -146,13 +146,13 @@ class OpenAICompatBackend:
                         block.get("type") if isinstance(block, dict) else None
                     )
                     if btype == "text":
-                        text = getattr(block, "text", None) or block.get("text", "")
+                        text = getattr(block, "text", None) or (block.get("text", "") if isinstance(block, dict) else "")
                         if text:
                             text_parts.append(text)
                     elif btype == "tool_use":
-                        bid   = getattr(block, "id",   None) or block.get("id",   str(uuid.uuid4())[:8])
-                        bname = getattr(block, "name", None) or block.get("name", "")
-                        binput = getattr(block, "input", None) or block.get("input", {})
+                        bid   = getattr(block, "id",   None) or (block.get("id",   str(uuid.uuid4())[:8]) if isinstance(block, dict) else str(uuid.uuid4())[:8])
+                        bname = getattr(block, "name", None) or (block.get("name", "") if isinstance(block, dict) else "")
+                        binput = getattr(block, "input", None) or (block.get("input", {}) if isinstance(block, dict) else {})
                         tool_calls.append({
                             "id": bid,
                             "type": "function",
