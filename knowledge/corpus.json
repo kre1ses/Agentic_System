@@ -386,5 +386,44 @@
       "sandboxing",
       "code_execution"
     ]
+  },
+  {
+    "text": "Experiment 20260328_193940: model=random_forest achieved CV MSE=10576.7015, CV RMSE=102.8431, holdout R\u00b2=0.3825.",
+    "source": "experiment:20260328_193940",
+    "tags": [
+      "experiment",
+      "model_selection",
+      "regression",
+      "evaluation"
+    ]
+  },
+  {
+    "text": "Experiment 20260328_193940: model=random_forest achieved CV MSE=10576.7015, CV RMSE=102.8431, holdout R\u00b2=0.3825.",
+    "source": "experiment:20260328_193940",
+    "tags": [
+      "experiment",
+      "model_selection",
+      "regression",
+      "evaluation"
+    ]
+  },
+  {
+    "text": "Experiment 20260328_193940 feature engineering: dropped: ['name', '_id', 'last_dt']; log-transformed: ['amt_reviews']; encoded: {'location_cluster': 'one-hot', 'location': 'target-encoding', 'type_house': 'one-hot'}; scaled: ['lat', 'lon', 'sum', 'min_days', 'amt_reviews', 'avg_reviews', 'total_host'].",
+    "source": "experiment:20260328_193940",
+    "tags": [
+      "experiment",
+      "feature_engineering",
+      "regression"
+    ]
+  },
+  {
+    "text": "Experiment 20260328_193940 validation findings: ID/constant/empty drop candidates: ['name', '_id'].",
+    "source": "experiment:20260328_193940",
+    "tags": [
+      "experiment",
+      "validation",
+      "leakage",
+      "regression"
+    ]
   }
 ]

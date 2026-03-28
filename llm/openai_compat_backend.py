@@ -163,7 +163,7 @@ class OpenAICompatBackend:
                         })
 
                 asst_msg: dict[str, Any] = {"role": "assistant"}
-                asst_msg["content"] = " ".join(text_parts) if text_parts else None
+                asst_msg["content"] = " ".join(text_parts) if text_parts else ""
                 if tool_calls:
                     asst_msg["tool_calls"] = tool_calls
                 oai.append(asst_msg)

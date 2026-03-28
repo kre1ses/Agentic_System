@@ -66,11 +66,11 @@ MODELS_BY_PROVIDER = {
         "reporter":    "openai/o3-mini",
     },
     "huggingface": {
-        "validator":   "meta-llama/Llama-3.1-8B-Instruct",
+        "validator":   "Qwen/Qwen2.5-72B-Instruct",
         "planner":     "Qwen/Qwen2.5-72B-Instruct",
-        "explorer":    "meta-llama/Llama-3.1-8B-Instruct",
-        "engineer":    "meta-llama/Llama-3.1-8B-Instruct",
-        "builder":     "meta-llama/Llama-3.1-8B-Instruct",
+        "explorer":    "Qwen/Qwen2.5-72B-Instruct",
+        "engineer":    "Qwen/Qwen2.5-72B-Instruct",
+        "builder":     "Qwen/Qwen2.5-72B-Instruct",
         "critic":      "Qwen/Qwen2.5-72B-Instruct",
         "coordinator": "Qwen/Qwen2.5-72B-Instruct",
         "reporter":    "Qwen/Qwen2.5-72B-Instruct",
@@ -98,8 +98,7 @@ MAX_TOOL_RETRIES = 3
 CODE_TIMEOUT_SEC = 60
 MAX_TOKENS = 4096
 # Hard cap on total tool calls per agent run (prevents infinite ReAct loops).
-# Expensive tools (compare_models, train_and_evaluate, train_ensemble) each
-# count as 1 toward this limit.
+# Expensive tools (compare_models, train_and_evaluate) each count as 1 toward this limit.
 MAX_TOOL_CALLS = 10
 
 # RAG

@@ -6,7 +6,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor, VotingRegressor
+from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
@@ -490,65 +490,6 @@ class MLTools:
         }
 
     @staticmethod
-    def train_ensemble(path: str, target_col: str,
-                        top_n: int = 3,
-                        drop_cols: list[str] | None = None) -> dict[str, Any]:
-        """
-        Train a weighted ensemble of the top-N models by CV MSE.
-        Weights are proportional to 1/cv_mse (better model gets higher weight).
-        Returns ensemble CV MSE and saves the ensemble to disk.
-        """
-        comparison = MLTools.compare_models(path, target_col, drop_cols)
-        ranked = comparison["ranking"][:top_n]
-        if not ranked:
-            return {"error": "No models trained successfully"}
-
-        mse_map = {m: comparison["results"][m]["cv_mse"] for m in ranked}
-        weights = {m: 1.0 / mse_map[m] for m in ranked}
-        weight_sum = sum(weights.values())
-        weights = {m: w / weight_sum for m, w in weights.items()}
-
-        # Collect per-model CV predictions for final ensemble MSE estimate
-        df = pd.read_csv(path)
-        X_full = _prepare_X(df, target_col, drop_cols)
-        y_full = df[target_col]
-        kf = KFold(n_splits=5, shuffle=True, random_state=42)
-
-        oof_preds = {m: np.zeros(len(y_full)) for m in ranked}
-
-        for tr_idx, val_idx in kf.split(X_full):
-            X_cv_tr = X_full.iloc[tr_idx].copy()
-            X_cv_val = X_full.iloc[val_idx].copy()
-            y_cv_tr = y_full.iloc[tr_idx]
-
-            for m in ranked:
-                X_tr_enc, X_val_enc, y_enc, log_cv, _ = _build_full_pipeline(
-                    X_cv_tr, y_cv_tr, X_cv_val, m
-                )
-                pre = _build_preprocessor(X_tr_enc)
-                reg = _build_model(m)
-                pl = Pipeline([("pre", pre), ("reg", reg)])
-                pl.fit(X_tr_enc, y_enc)
-                raw = pl.predict(X_val_enc)
-                oof_preds[m][val_idx] = np.expm1(raw) if log_cv else raw
-
-        ensemble_oof = sum(oof_preds[m] * weights[m] for m in ranked)
-        ensemble_oof = np.clip(ensemble_oof, 0, 365)
-        ensemble_mse = float(mean_squared_error(y_full, ensemble_oof))
-
-        return {
-            "model": "ensemble",
-            "component_models": ranked,
-            "weights": weights,
-            "cv_mse_mean":  round(ensemble_mse, 4),
-            "cv_rmse_mean": round(float(np.sqrt(ensemble_mse)), 4),
-            "holdout_metrics": {
-                "mse":  round(ensemble_mse, 4),
-                "rmse": round(float(np.sqrt(ensemble_mse)), 4),
-            },
-        }
-
-    @staticmethod
     def feature_importance(path: str, target_col: str,
                             drop_cols: list[str] | None = None,
                             top_n: int = 20) -> dict[str, Any]:
@@ -590,13 +531,8 @@ class MLTools:
     def generate_submission(train_path: str, test_path: str,
                              target_col: str, model_name: str = "lightgbm",
                              drop_cols: list[str] | None = None,
-                             output_path: str = "submission.csv",
-                             use_ensemble: bool = False) -> dict[str, Any]:
-        """
-        Train on the full training set and predict the test set.
-        If use_ensemble=True, blends top-3 models weighted by 1/cv_mse.
-        Saves submission CSV and trained pipeline(s).
-        """
+                             output_path: str = "submission.csv") -> dict[str, Any]:
+        """Train on the full training set and predict the test set. Saves submission CSV."""
         train_df = pd.read_csv(train_path)
         test_df  = pd.read_csv(test_path)
 
@@ -604,25 +540,20 @@ class MLTools:
         y_train = train_df[target_col]
         X_test  = _prepare_X(test_df, target_col, drop_cols)
 
-        if use_ensemble:
-            preds = MLTools._ensemble_predict(
-                X_train, y_train, X_test, train_path, target_col, drop_cols
-            )
-        else:
-            X_tr_enc, X_te_enc, y_enc, log_t, _ = _build_full_pipeline(
-                X_train, y_train, X_test, model_name
-            )
-            preprocessor = _build_preprocessor(X_tr_enc)
-            reg = _build_model(model_name)
-            pipeline = Pipeline([("pre", preprocessor), ("reg", reg)])
-            pipeline.fit(X_tr_enc, y_enc)
+        X_tr_enc, X_te_enc, y_enc, log_t, _ = _build_full_pipeline(
+            X_train, y_train, X_test, model_name
+        )
+        preprocessor = _build_preprocessor(X_tr_enc)
+        reg = _build_model(model_name)
+        pipeline = Pipeline([("pre", preprocessor), ("reg", reg)])
+        pipeline.fit(X_tr_enc, y_enc)
 
-            raw = pipeline.predict(X_te_enc)
-            preds = np.expm1(raw) if log_t else raw
+        raw = pipeline.predict(X_te_enc)
+        preds = np.expm1(raw) if log_t else raw
 
-            model_path = MODELS_DIR / f"{model_name}_full.pkl"
-            with open(model_path, "wb") as f:
-                pickle.dump({"pipeline": pipeline, "log_transformed": log_t}, f)
+        model_path = MODELS_DIR / f"{model_name}_full.pkl"
+        with open(model_path, "wb") as f:
+            pickle.dump({"pipeline": pipeline, "log_transformed": log_t}, f)
 
         preds = np.clip(preds, 0, 365)
 
@@ -648,35 +579,6 @@ class MLTools:
             "pred_min":   round(float(preds.min()), 4),
             "pred_max":   round(float(preds.max()), 4),
         }
-
-    @staticmethod
-    def _ensemble_predict(
-        X_train: pd.DataFrame, y_train: pd.Series,
-        X_test: pd.DataFrame,
-        train_path: str, target_col: str,
-        drop_cols: list[str] | None,
-    ) -> np.ndarray:
-        """Weighted average of top available models."""
-        comparison = MLTools.compare_models(train_path, target_col, drop_cols)
-        ranked = comparison["ranking"][:3]
-        mse_map = {m: comparison["results"][m]["cv_mse"] for m in ranked}
-        weight_sum = sum(1.0 / v for v in mse_map.values())
-        weights = {m: (1.0 / mse_map[m]) / weight_sum for m in ranked}
-
-        preds = np.zeros(len(X_test))
-        for m in ranked:
-            X_tr_enc, X_te_enc, y_enc, log_t, _ = _build_full_pipeline(
-                X_train.copy(), y_train, X_test.copy(), m
-            )
-            pre = _build_preprocessor(X_tr_enc)
-            reg = _build_model(m)
-            pl = Pipeline([("pre", pre), ("reg", reg)])
-            pl.fit(X_tr_enc, y_enc)
-            raw = pl.predict(X_te_enc)
-            model_pred = np.expm1(raw) if log_t else raw
-            preds += weights[m] * model_pred
-
-        return preds
 
     @staticmethod
     def get_tool_definitions() -> list[dict]:
@@ -737,23 +639,6 @@ class MLTools:
                 },
             },
             {
-                "name": "train_ensemble",
-                "description": (
-                    "Train a weighted ensemble of the top-N models (weighted by 1/cv_mse). "
-                    "Typically reduces MSE by 2-5% vs the best single model."
-                ),
-                "input_schema": {
-                    "type": "object",
-                    "properties": {
-                        "path": {"type": "string", "description": "Path to the CSV training dataset (not a .pkl model file)"},
-                        "target_col": {"type": "string"},
-                        "top_n": {"type": "integer", "default": 3},
-                        "drop_cols": {"type": "array", "items": {"type": "string"}, "default": []},
-                    },
-                    "required": ["path", "target_col"],
-                },
-            },
-            {
                 "name": "feature_importance",
                 "description": "Compute feature importances using LightGBM (or RF as fallback).",
                 "input_schema": {
@@ -779,7 +664,6 @@ class MLTools:
                         "model_name":    {"type": "string", "default": "lightgbm"},
                         "drop_cols":     {"type": "array", "items": {"type": "string"}, "default": []},
                         "output_path":   {"type": "string", "default": "submission.csv"},
-                        "use_ensemble":  {"type": "boolean", "default": False},
                     },
                     "required": ["train_path", "test_path", "target_col"],
                 },

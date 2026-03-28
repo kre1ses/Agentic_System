@@ -30,15 +30,17 @@ class ModelMetrics:
             pipeline = saved
             log_transformed = False
 
-        from tools.ml_tools import _prepare_X
+        from tools.ml_tools import _prepare_X, _build_full_pipeline
         df = pd.read_csv(dataset_path)
-        # Pass drop_cols=None: only target + identifiers are removed.
-        # The pipeline's ColumnTransformer uses only the columns it was trained on.
-        X = _prepare_X(df, target_col, drop_cols=None)
-        y = df[target_col]
+        X_full = _prepare_X(df, target_col, drop_cols=None)
+        y_full = df[target_col]
 
         from sklearn.model_selection import train_test_split
-        _, X_te, _, y_te = train_test_split(X, y, test_size=0.2, random_state=42)
+        X_tr, X_te, y_tr, y_te = train_test_split(
+            X_full, y_full, test_size=0.2, random_state=42
+        )
+        # Mirror train_and_evaluate: apply target encoding using train-split statistics.
+        _, X_te, _, _, _ = _build_full_pipeline(X_tr, y_tr, X_te, "")
 
         raw = pipeline.predict(X_te)
         y_pred = np.expm1(raw) if log_transformed else raw
