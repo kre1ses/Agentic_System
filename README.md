@@ -57,7 +57,7 @@ safety/
   └── sandbox.py      — AST-checked subprocess sandbox for generated code
 
 evaluation/
-  ├── metrics.py      — MSE, RMSE, MAE, R², PR-AUC, Brier score
+  ├── metrics.py      — MSE, RMSE, MAE, R²
   └── agent_eval.py   — critique convergence, metric trajectory, agent participation
 ```
 
@@ -80,37 +80,7 @@ evaluation/
 pip install -r requirements.txt
 ```
 
-### 2. Download the competition dataset (Kaggle)
-
-```bash
-# Download and extract into ./data_2/
-python main.py --kaggle mws-ai-agents-2026
-
-# Or use the standalone script
-python authenticate.py mws-ai-agents-2026 ./data_2
-```
-
-On first run you will be prompted to paste your **Kaggle API token** (JSON) if
-`~/.kaggle/kaggle.json` is not present. Get it from
-**kaggle.com → Settings → API → Create New Token**.
-
-Internally the script runs:
-```bash
-kaggle competitions download -c mws-ai-agents-2026 -p ./data_2
-```
-and extracts the ZIP using Python's built-in `zipfile` module (works on Windows,
-Linux, and macOS). The equivalent platform commands are:
-
-```powershell
-# PowerShell (Windows)
-Expand-Archive -Path "data_2/mws-ai-agents-2026.zip" -DestinationPath "./data_2"
-```
-```bash
-# Linux / macOS
-unzip data_2/mws-ai-agents-2026.zip -d ./data_2
-```
-
-### 3. Set your LLM API key
+### 2. Set your LLM API key
 
 At least one backend is required for full agent reasoning. Without a key the
 system runs in rule-based fallback mode.
@@ -129,18 +99,54 @@ export VSEGPT_API_KEY=...
 export HF_TOKEN=hf_...
 ```
 
-### 4. Run the pipeline
+### 3. Full end-to-end run (one command)
 
 ```bash
-# Run on the competition dataset (default)
+# Download dataset → run pipeline → submit to Kaggle
+python main.py --kaggle mws-ai-agents-2026 --submit
+
+# Same, with a custom submission message
+python main.py --kaggle mws-ai-agents-2026 --submit --submit-message "xgboost v1"
+
+# Rule-based mode (no LLM key needed)
+python main.py --kaggle mws-ai-agents-2026 --no-llm --submit
+```
+
+On first run you will be prompted to paste your **Kaggle API token** (JSON) if
+`~/.kaggle/kaggle.json` is not present. Get it from
+**kaggle.com → Settings → API → Create New Token**.
+
+### 4. Step-by-step
+
+```bash
+# Step 1 — download dataset only
+python main.py --kaggle mws-ai-agents-2026
+# equivalent standalone script:
+python authenticate.py mws-ai-agents-2026 ./data_2
+
+# Step 2 — run pipeline only
 python main.py
 
-# Rule-based mode (no API key needed, fast testing)
-python main.py --no-llm
+# Step 3 — submit existing submission.csv
+python main.py --submit
+python main.py --submit --submit-message "run v2"
 
-# Print benchmark report for a past run
-python main.py --report-only "YOUR EXPERIMENT NAME"
+# Other
+python main.py --report-only "YOUR_EXPERIMENT_RUN_ID"
 ```
+
+<details>
+<summary>Equivalent platform commands for the ZIP extraction</summary>
+
+```powershell
+# PowerShell (Windows)
+Expand-Archive -Path "data_2/mws-ai-agents-2026.zip" -DestinationPath "./data_2"
+```
+```bash
+# Linux / macOS
+unzip data_2/mws-ai-agents-2026.zip -d ./data_2
+```
+</details>
 
 ---
 
@@ -247,5 +253,8 @@ Options:
   --report-only RUN_ID    Print benchmark report for an existing run and exit
   --kaggle COMPETITION    Download Kaggle competition dataset and exit
   --kaggle-dir DIR        Destination for Kaggle download (default: ./data_2)
+  --submit                Submit submission CSV to Kaggle (standalone or after pipeline)
+  --competition NAME      Competition name for --submit (default: mws-ai-agents-2026)
+  --submit-message TEXT   Comment for the Kaggle submission (default: auto-timestamp)
   --quiet                 Suppress agent logs
 ```

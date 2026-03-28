@@ -5,12 +5,12 @@ Multi-Agent System
 Entry point for the full Planner-Explorer-Engineer-Builder-Critic pipeline.
 
 Usage:
-    python main.py --kaggle mws-ai-agents-2026  # download Kaggle competition dataset first
-    python main.py                              # run pipeline on data_2/train.csv
-    python main.py --dataset path/to/data.csv --target churn
-    python main.py --no-llm                     # run in rule-based mode (no API key needed)
-    python main.py --report-only <run_id>       # print report for existing run
-    python main.py --kaggle mws-ai-agents-2026 --kaggle-dir ./data_2
+    python main.py --kaggle mws-ai-agents-2026 --submit   # full end-to-end
+    python main.py --kaggle mws-ai-agents-2026            # download only
+    python main.py                                        # pipeline only
+    python main.py --submit                               # submit existing submission.csv
+    python main.py --no-llm --submit --submit-message "baseline"
+    python main.py --report-only <run_id>                 # print report for existing run
 """
 import argparse
 import json
@@ -51,6 +51,15 @@ def parse_args():
                              "(e.g. --kaggle mws-ai-agents-2026)")
     parser.add_argument("--kaggle-dir", default="./data_2",
                         help="Destination directory for Kaggle download (default: ./data_2)")
+    parser.add_argument("--competition", default="mws-ai-agents-2026",
+                        help="Kaggle competition name used for --submit "
+                             "(default: mws-ai-agents-2026)")
+    parser.add_argument("--submit", action="store_true",
+                        help="Submit the submission CSV to Kaggle after the pipeline "
+                             "(or standalone to submit an existing file)")
+    parser.add_argument("--submit-message", default="",
+                        help="Comment attached to the Kaggle submission "
+                             "(default: auto-generated from run timestamp)")
     return parser.parse_args()
 
 
@@ -147,9 +156,8 @@ def _ensure_kaggle_credentials() -> None:
     Priority order:
       1. ~/.kaggle/kaggle.json already exists — nothing to do.
       2. KAGGLE_USERNAME + KAGGLE_KEY env vars are set — nothing to do.
-      3. Otherwise prompt the user to paste their API-token JSON
-         (the file you download from kaggle.com → Account → API → Create New Token).
-         The token is saved to ~/.kaggle/kaggle.json for future use.
+      3. Otherwise prompt for Kaggle username and API key separately,
+         then save them to ~/.kaggle/kaggle.json for future use.
     """
     kaggle_json = Path.home() / ".kaggle" / "kaggle.json"
     if kaggle_json.exists():
@@ -158,30 +166,22 @@ def _ensure_kaggle_credentials() -> None:
         return
 
     print("\n  Kaggle credentials not found.")
-    print("  Go to https://www.kaggle.com/settings → API → 'Create New Token'")
-    print("  and paste the downloaded kaggle.json contents below.")
-    print("  Format: {\"username\": \"<name>\", \"key\": \"<key>\"}")
-    print("  (Input is hidden — press Enter when done)\n")
+    print("  Find your API key at: kaggle.com → Settings → API → Create New Token\n")
 
     import getpass
-    token_raw = getpass.getpass("  KAGGLE_API_TOKEN (JSON): ").strip()
-    if not token_raw:
-        print("  [!] No token provided — aborting download.")
+
+    username = input("  Kaggle username: ").strip()
+    if not username:
+        print("  [!] Username cannot be empty.")
         sys.exit(1)
 
-    import json as _json
-    try:
-        token_data = _json.loads(token_raw)
-    except _json.JSONDecodeError:
-        print("  [!] Invalid JSON — expected {\"username\": \"...\", \"key\": \"...\"}")
-        sys.exit(1)
-
-    if "username" not in token_data or "key" not in token_data:
-        print("  [!] Token JSON must contain 'username' and 'key' fields.")
+    api_key = getpass.getpass("  Kaggle API key (hidden): ").strip()
+    if not api_key:
+        print("  [!] API key cannot be empty.")
         sys.exit(1)
 
     kaggle_json.parent.mkdir(parents=True, exist_ok=True)
-    kaggle_json.write_text(_json.dumps(token_data, indent=2))
+    kaggle_json.write_text(json.dumps({"username": username, "key": api_key}, indent=2))
     kaggle_json.chmod(0o600)
     print(f"  Credentials saved to {kaggle_json}")
 
@@ -241,27 +241,85 @@ def kaggle_download(competition: str, output_dir: str = "./data_2") -> None:
         print("  Extracted: " + ", ".join(sorted(extracted)))
 
 
+def kaggle_submit(competition: str, submission_path: str = "submission.csv",
+                  message: str = "") -> None:
+    """
+    Submit a prediction file to a Kaggle competition.
+
+    Runs: kaggle competitions submit -c <competition> -f <file> -m "<message>"
+
+    Credentials are checked/prompted the same way as kaggle_download().
+    """
+    _ensure_kaggle_credentials()
+
+    sub = Path(submission_path)
+    if not sub.exists():
+        print(f"\n  [!] Submission file not found: {sub.resolve()}")
+        print("  Run the pipeline first to generate it:")
+        print("    python main.py")
+        sys.exit(1)
+
+    if not message:
+        from datetime import datetime
+        message = f"auto-submit {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+
+    cmd = [
+        "kaggle", "competitions", "submit",
+        "-c", competition,
+        "-f", str(sub),
+        "-m", message,
+    ]
+    print(f"\n  Submitting '{sub}' to competition '{competition}'")
+    print(f"  Message: {message}")
+    print(f"  Running: {' '.join(cmd)}\n")
+
+    result = subprocess.run(cmd, check=False)
+    if result.returncode != 0:
+        print(f"\n  [!] Submission failed (exit code {result.returncode}).")
+        print("  Check that you have accepted the competition rules at "
+              f"https://www.kaggle.com/c/{competition}")
+        sys.exit(result.returncode)
+
+    print("\n  Submission successful!")
+    print(f"  View results: https://www.kaggle.com/c/{competition}/submissions")
+
+
 def main():
     print_banner()
     args = parse_args()
 
+    # Competition name: --kaggle value takes priority over --competition
+    competition = args.kaggle or args.competition
+
+    # ── Step 1: download ────────────────────────────────────────────────
     if args.kaggle:
         kaggle_download(args.kaggle, args.kaggle_dir)
-        return
+        # Download-only: no pipeline, no submit requested → done
+        if not args.submit and not args.report_only:
+            return
 
-    # Validate that the dataset exists before going further
-    if not Path(args.dataset).exists():
-        print(f"\n  [!] Dataset not found: {args.dataset}")
-        print("  Download the competition data first:")
-        print("    python main.py --kaggle mws-ai-agents-2026")
-        sys.exit(1)
-
+    # ── Step 2: report-only shortcut ────────────────────────────────────
     if args.report_only:
         report_only(args.report_only)
         return
 
+    # ── Step 3: standalone submit (no pipeline needed) ──────────────────
+    # Triggered when --submit is set but there is no dataset to train on
+    if args.submit and not Path(args.dataset).exists():
+        kaggle_submit(competition, args.submission, args.submit_message)
+        return
+
+    # ── Step 4: validate dataset before pipeline ────────────────────────
+    if not Path(args.dataset).exists():
+        print(f"\n  [!] Dataset not found: {args.dataset}")
+        print("  Download the competition data first:")
+        print("    python main.py --kaggle mws-ai-agents-2026")
+        print("  Or run the full end-to-end pipeline:")
+        print("    python main.py --kaggle mws-ai-agents-2026 --submit")
+        sys.exit(1)
+
+    # ── Step 5: run pipeline ─────────────────────────────────────────────
     if args.no_llm:
-        # Override API key to force fallback mode
         os.environ["ANTHROPIC_API_KEY"] = ""
         import config
         config.ANTHROPIC_API_KEY = ""
@@ -273,6 +331,10 @@ def main():
         submission_path=args.submission,
         verbose=not args.quiet,
     )
+
+    # ── Step 6: submit ───────────────────────────────────────────────────
+    if args.submit:
+        kaggle_submit(competition, args.submission, args.submit_message)
 
 
 if __name__ == "__main__":
