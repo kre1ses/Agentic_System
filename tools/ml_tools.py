@@ -254,7 +254,9 @@ def _build_preprocessor(X: pd.DataFrame) -> ColumnTransformer:
         transformers.append(("num", num_pipe, num_cols))
     if cat_cols:
         transformers.append(("cat", cat_pipe, cat_cols))
-    return ColumnTransformer(transformers=transformers, remainder="drop")
+    ct = ColumnTransformer(transformers=transformers, remainder="drop")
+    ct.set_output(transform="pandas")
+    return ct
 
 
 def _build_model(model_name: str):

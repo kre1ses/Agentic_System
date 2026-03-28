@@ -9,10 +9,13 @@ Env var: HF_TOKEN  (from huggingface.co → Settings → Access Tokens)
 Docs:    https://huggingface.co/learn/cookbook/enterprise_hub_serverless_inference_api
 """
 import json
+import time
 from typing import Any
 
 from config import MAX_TOKENS
 from llm.types import FakeResponse, FakeTextBlock, FakeToolUseBlock
+
+_RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 
 
 class HuggingFaceBackend:
@@ -46,5 +49,21 @@ class HuggingFaceBackend:
             kwargs["tools"] = oai_tools
             kwargs["tool_choice"] = "auto"
 
-        resp = self._client.chat_completion(**kwargs)
-        return OpenAICompatBackend._to_fake_response(resp)
+        last_exc: Exception | None = None
+        for attempt in range(4):
+            try:
+                resp = self._client.chat_completion(**kwargs)
+                return OpenAICompatBackend._to_fake_response(resp)
+            except Exception as exc:
+                last_exc = exc
+                status = getattr(exc, "response", None)
+                status_code = (
+                    status.status_code if hasattr(status, "status_code") else
+                    getattr(exc, "status_code", None)
+                )
+                if status_code not in _RETRYABLE_STATUS:
+                    raise
+                wait = 2 ** attempt
+                print(f"[HF] {exc} — retrying in {wait}s (attempt {attempt + 1}/4)")
+                time.sleep(wait)
+        raise last_exc

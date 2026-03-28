@@ -21,7 +21,14 @@ class ModelMetrics:
         via its fitted ColumnTransformer (remainder='drop').
         """
         with open(model_path, "rb") as f:
-            pipeline = pickle.load(f)
+            saved = pickle.load(f)
+
+        if isinstance(saved, dict):
+            pipeline = saved["pipeline"]
+            log_transformed = saved.get("log_transformed", False)
+        else:
+            pipeline = saved
+            log_transformed = False
 
         from tools.ml_tools import _prepare_X
         df = pd.read_csv(dataset_path)
@@ -33,7 +40,9 @@ class ModelMetrics:
         from sklearn.model_selection import train_test_split
         _, X_te, _, y_te = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        y_pred = pipeline.predict(X_te)
+        raw = pipeline.predict(X_te)
+        y_pred = np.expm1(raw) if log_transformed else raw
+        y_pred = np.clip(y_pred, 0, 365)
         return ModelMetrics.compute(y_te, y_pred)
 
     @staticmethod
