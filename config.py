@@ -97,9 +97,13 @@ MAX_CRITIQUE_ROUNDS = 2
 MAX_TOOL_RETRIES = 3
 CODE_TIMEOUT_SEC = 60
 MAX_TOKENS = 4096
+# Hard cap on total tool calls per agent run (prevents infinite ReAct loops).
+# Expensive tools (compare_models, train_and_evaluate, train_ensemble) each
+# count as 1 toward this limit.
+MAX_TOOL_CALLS = 10
 
 # RAG
-RAG_TOP_K = 3
+RAG_TOP_K = 5
 
 # Task type
 TASK_TYPE = "regression"          # "regression" | "binary_classification"

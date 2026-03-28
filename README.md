@@ -3,6 +3,7 @@
 Intelligent multi-agent system for automated regression on tabular (Kaggle-format) datasets.
 Implements the full **Validator → Planner → Explorer → Engineer → Builder ↔ Critic → Reporter** pipeline using the HuggingFace API (and OpenRouter / VseGPT / Anthropic Claude as alternative backends).
 
+Note!!! This agent system works only for regression task.
 ---
 
 ## Architecture

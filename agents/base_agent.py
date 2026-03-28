@@ -9,7 +9,7 @@ import json
 import time
 from typing import Any
 
-from config import MAX_TOKENS, MAX_TOOL_RETRIES
+from config import MAX_TOKENS, MAX_TOOL_CALLS, MAX_TOOL_RETRIES
 from llm.factory import get_llm_client
 from memory.experiment_store import ExperimentStore
 from rag.knowledge_base import KnowledgeBase
@@ -75,12 +75,20 @@ class BaseAgent:
                 continue
 
             # ── ReAct tool-use loop ────────────────────────────────────
+            tool_call_count = 0
             while response.stop_reason == "tool_use":
+                if tool_call_count >= MAX_TOOL_CALLS:
+                    self._log(
+                        f"Tool call limit ({MAX_TOOL_CALLS}) reached — stopping loop.",
+                        level="warn",
+                    )
+                    break
                 tool_results = []
                 for block in response.content:
                     btype = getattr(block, "type", None)
                     if btype != "tool_use":
                         continue
+                    tool_call_count += 1
                     result = self._call_tool(block.name, block.input)
                     tool_results.append({
                         "type": "tool_result",

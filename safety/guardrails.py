@@ -102,7 +102,7 @@ class Guardrails:
     def validate_model_name(name: str) -> tuple[bool, str]:
         allowed = {
             "ridge", "random_forest", "gradient_boosting",
-            "lightgbm", "xgboost", "ensemble",
+            "lightgbm", "xgboost", "catboost", "ensemble",
             # legacy names
             "logistic_regression",
         }
@@ -123,9 +123,13 @@ class Guardrails:
         Currently enforces path safety and column existence where possible.
         """
         if "path" in tool_input:
-            safe, reason = Guardrails.validate_file_path(tool_input["path"])
-            if not safe:
-                return False, reason
+            p = tool_input["path"]
+            # model_path values (.pkl) are outputs from training tools, not dataset
+            # inputs — skip dataset validation for them
+            if not str(p).endswith(".pkl"):
+                safe, reason = Guardrails.validate_file_path(p)
+                if not safe:
+                    return False, reason
         if "model_name" in tool_input:
             safe, reason = Guardrails.validate_model_name(tool_input["model_name"])
             if not safe:

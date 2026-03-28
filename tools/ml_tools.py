@@ -26,6 +26,12 @@ try:
 except ImportError:
     _XGB_AVAILABLE = False
 
+try:
+    from catboost import CatBoostRegressor
+    _CB_AVAILABLE = True
+except ImportError:
+    _CB_AVAILABLE = False
+
 from config import MODELS_DIR
 
 
@@ -292,6 +298,14 @@ def _build_model(model_name: str):
             reg_alpha=0.1, reg_lambda=1.0,
             random_state=42, n_jobs=-1, verbosity=0,
         )
+    if model_name == "catboost":
+        if not _CB_AVAILABLE:
+            raise ImportError("catboost is not installed")
+        return CatBoostRegressor(
+            random_seed=42, 
+            thread_count=-1,
+            verbose=0,
+        )
     raise ValueError(f"Unknown model: {model_name}")
 
 
@@ -336,6 +350,8 @@ class MLTools:
         ["lightgbm"] if _LGB_AVAILABLE else []
     ) + (
         ["xgboost"] if _XGB_AVAILABLE else []
+    ) + (
+        ["catboost"] if _CB_AVAILABLE else []
     )
 
     @staticmethod
@@ -676,7 +692,7 @@ class MLTools:
                 "input_schema": {
                     "type": "object",
                     "properties": {
-                        "path": {"type": "string"},
+                        "path": {"type": "string", "description": "Path to the CSV training dataset (not a .pkl model file)"},
                         "target_col": {"type": "string"},
                         "drop_cols": {"type": "array", "items": {"type": "string"}, "default": []},
                     },
@@ -693,7 +709,7 @@ class MLTools:
                 "input_schema": {
                     "type": "object",
                     "properties": {
-                        "path": {"type": "string"},
+                        "path": {"type": "string", "description": "Path to the CSV training dataset (not a .pkl model file)"},
                         "target_col": {"type": "string"},
                         "model_name": {
                             "type": "string",
@@ -713,7 +729,7 @@ class MLTools:
                 "input_schema": {
                     "type": "object",
                     "properties": {
-                        "path": {"type": "string"},
+                        "path": {"type": "string", "description": "Path to the CSV training dataset (not a .pkl model file)"},
                         "target_col": {"type": "string"},
                         "drop_cols": {"type": "array", "items": {"type": "string"}, "default": []},
                     },
@@ -729,7 +745,7 @@ class MLTools:
                 "input_schema": {
                     "type": "object",
                     "properties": {
-                        "path": {"type": "string"},
+                        "path": {"type": "string", "description": "Path to the CSV training dataset (not a .pkl model file)"},
                         "target_col": {"type": "string"},
                         "top_n": {"type": "integer", "default": 3},
                         "drop_cols": {"type": "array", "items": {"type": "string"}, "default": []},
@@ -743,7 +759,7 @@ class MLTools:
                 "input_schema": {
                     "type": "object",
                     "properties": {
-                        "path": {"type": "string"},
+                        "path": {"type": "string", "description": "Path to the CSV training dataset (not a .pkl model file)"},
                         "target_col": {"type": "string"},
                         "drop_cols": {"type": "array", "items": {"type": "string"}, "default": []},
                         "top_n": {"type": "integer", "default": 20},
