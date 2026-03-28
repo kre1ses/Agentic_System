@@ -18,6 +18,7 @@ from agents.engineer import EngineerAgent
 from agents.explorer import ExplorerAgent
 from agents.planner import PlannerAgent
 from agents.reporter import ReporterAgent
+from agents.validator import ValidationAgent
 from config import MAX_CRITIQUE_ROUNDS, MODELS
 from memory.experiment_store import ExperimentStore
 from rag.knowledge_base import KnowledgeBase
@@ -36,6 +37,7 @@ class CoordinatorAgent(BaseAgent):
             "for rental occupancy prediction and generate a Kaggle submission file."
         )
         # Shared KB and store for all sub-agents
+        self._validator = ValidationAgent(kb=self.kb, store=self.store, verbose=verbose)
         self._planner = PlannerAgent(kb=self.kb, store=self.store, verbose=verbose)
         self._explorer = ExplorerAgent(kb=self.kb, store=self.store, verbose=verbose)
         self._engineer = EngineerAgent(kb=self.kb, store=self.store, verbose=verbose)
@@ -60,6 +62,12 @@ class CoordinatorAgent(BaseAgent):
         print(f"  Run ID  : {self.store.run_id}")
         print(f"{'='*60}\n")
 
+        # ── Phase 0: Validation ──────────────────────────────────────
+        self._phase("0. Data Validation")
+        validation_report = self._validator.validate(
+            dataset_path, target_col, test_path=test_path
+        )
+
         # ── Phase 1: Planning ────────────────────────────────────────
         self._phase("1. Planning")
         plan = self._planner.create_plan(dataset_path, target_col)
@@ -74,7 +82,8 @@ class CoordinatorAgent(BaseAgent):
         # ── Phase 3: Feature Engineering (with Critic loop) ──────────
         self._phase("3. Feature Engineering")
         feature_decisions = self._feature_loop(
-            eda_report, dataset_path, target_col
+            eda_report, dataset_path, target_col,
+            validation_report=validation_report,
         )
 
         # ── Phase 4: Model Building (with Critic loop) ───────────────
@@ -104,9 +113,20 @@ class CoordinatorAgent(BaseAgent):
         # ── Phase 6: LLM-generated Reports ──────────────────────────
         self._phase("6. Generating LLM Reports")
         report = self._compile_report(eda_report, feature_decisions,
-                                       final_result, submission_result)
+                                       final_result, submission_result,
+                                       validation_report)
         self._print_report(report)
         self._write_reports(dataset_path, target_col, report, eda_report)
+
+        # ── Phase 7: Persist experiment results into RAG ─────────────
+        self._phase("7. Updating Knowledge Base")
+        try:
+            kb_chunks = self.store.to_kb_chunks()
+            self.kb.learn_from_experiment(kb_chunks)
+            print(f"  Added {len(kb_chunks)} chunk(s) from this run to the knowledge base.")
+            print(f"  Total KB size: {len(self.kb)} chunks.")
+        except Exception as e:
+            print(f"  [!] KB update failed (non-fatal): {e}")
 
         return report
 
@@ -115,12 +135,15 @@ class CoordinatorAgent(BaseAgent):
     # ------------------------------------------------------------------
 
     def _feature_loop(self, eda_report: dict, dataset_path: str,
-                       target_col: str) -> dict:
+                       target_col: str,
+                       validation_report: dict | None = None) -> dict:
         decisions = {}
         feedback = ""
         for i in range(MAX_CRITIQUE_ROUNDS + 1):
             decisions = self._engineer.plan_features(
-                eda_report, dataset_path, target_col, critic_feedback=feedback
+                eda_report, dataset_path, target_col,
+                critic_feedback=feedback,
+                validation_report=validation_report,
             )
             critique = self._critic.review_feature_decisions(decisions, eda_report)
             self._print_critique("Feature decisions", critique)
@@ -159,12 +182,14 @@ class CoordinatorAgent(BaseAgent):
 
     def _compile_report(self, eda_report: dict, feature_decisions: dict,
                          model_result: dict,
-                         submission_result: dict | None = None) -> dict:
+                         submission_result: dict | None = None,
+                         validation_report: dict | None = None) -> dict:
         metrics = model_result.get("holdout_metrics", {})
         return {
             "run_id": self.store.run_id,
             "dataset_shape": eda_report.get("dataset_info", {}).get("shape"),
             "target_distribution": eda_report.get("target_distribution", {}),
+            "validation_report": validation_report or {},
             "feature_decisions": feature_decisions,
             "best_model": model_result.get("model"),
             "model_path": model_result.get("model_path"),

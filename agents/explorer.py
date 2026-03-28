@@ -36,7 +36,7 @@ class ExplorerAgent(BaseAgent):
         )
         narrative = self.run(
             prompt,
-            rag_query="EDA best practices missing values class imbalance",
+            rag_query="regression EDA target distribution skewness missing values correlation outliers rental occupancy datetime features",
         )
 
         # Also run the full MCP EDA for a structured report

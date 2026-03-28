@@ -138,7 +138,11 @@ class BaseAgent:
         parts = [self.role]
         if extra_context:
             parts.append(f"\nAdditional context:\n{extra_context}")
-        rag_ctx = self.kb.retrieve_as_context(rag_query)
+        # Role-aware retrieval: use agent name as role key
+        agent_role = self.name.lower()
+        rag_ctx = self.kb.retrieve_as_context(
+            rag_query, agent_role=agent_role
+        )
         if rag_ctx:
             parts.append(f"\n{rag_ctx}")
         past = self.store.get_context_for_rag()

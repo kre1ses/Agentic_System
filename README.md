@@ -1,7 +1,7 @@
 # Multi-Agent System
 
 Intelligent multi-agent system for automated regression on tabular (Kaggle-format) datasets.
-Implements the full **Planner → Explorer → Engineer → Builder ↔ Critic → Reporter** pipeline using the Anthropic Claude API (and OpenRouter / VseGPT / HuggingFace as alternative backends).
+Implements the full **Validator → Planner → Explorer → Engineer → Builder ↔ Critic → Reporter** pipeline using the Anthropic Claude API (and OpenRouter / VseGPT / HuggingFace as alternative backends).
 
 ---
 
@@ -10,10 +10,11 @@ Implements the full **Planner → Explorer → Engineer → Builder ↔ Critic �
 ```
 main.py
   └── CoordinatorAgent          (orchestrates all phases)
+        ├── ValidatorAgent       (Phase 0: input validation, schema & leakage checks)
         ├── PlannerAgent         (decomposes task into steps)
         ├── ExplorerAgent        (EDA via EDATools)
         │     └── [Critic review]
-        ├── EngineerAgent        (feature engineering decisions)
+        ├── EngineerAgent        (feature engineering decisions, uses validation context)
         │     └── [Critic loop, up to MAX_CRITIQUE_ROUNDS]
         ├── BuilderAgent         (model training & comparison)
         │     └── [Critic loop, up to MAX_CRITIQUE_ROUNDS]
@@ -23,6 +24,7 @@ main.py
 agents/
   ├── base_agent.py    — ReAct tool-use loop, LLM call wrappers
   ├── coordinator.py   — BDI orchestrator
+  ├── validator.py     — Input validation, schema checks, leakage detection (Phase 0)
   ├── planner.py       — Chain-of-Thought task decomposition
   ├── explorer.py      — EDA with EDATools
   ├── engineer.py      — Feature-engineering decision maker
@@ -69,6 +71,8 @@ evaluation/
 | BDI (Belief-Desire-Intention) | Coordinator phase management |
 | Planner-Executor-Critic | `coordinator.py` outer loop |
 | Supervisor-Worker | Coordinator → sub-agents |
+| Fail-Fast Gate | ValidatorAgent stops pipeline on critical data errors |
+| Contract-First | ValidationAgent passes typed schema to downstream agents |
 
 ---
 
@@ -183,7 +187,7 @@ Model assignments per agent (see `config.py`):
 | Agent | Anthropic | OpenRouter |
 |-------|-----------|------------|
 | Planner / Critic / Coordinator / Reporter | claude-sonnet-4-6 | llama-3.3-70b |
-| Explorer / Engineer / Builder | claude-haiku-4-5 | mistral-small-24b |
+| Validator / Explorer / Engineer / Builder | claude-haiku-4-5 | mistral-small-24b |
 
 ---
 
@@ -191,10 +195,10 @@ Model assignments per agent (see `config.py`):
 
 | Criterion (20 % each) | Implementation |
 |----------------------|----------------|
-| **Architecture & Interaction** | 7-agent pipeline with ReAct/BDI/Planner-Critic patterns; MCP interface; pluggable LLM backends |
-| **Automation & Safety** | Fully automated agent communication; Guardrails, SafeExecutor sandbox, prompt-injection detection |
+| **Architecture & Interaction** | 8-agent pipeline (Validator + 7) with ReAct/BDI/Planner-Critic patterns; MCP interface; pluggable LLM backends |
+| **Automation & Safety** | Fully automated agent communication; ValidatorAgent fail-fast gate; Guardrails, SafeExecutor sandbox, prompt-injection detection |
 | **Documentation & Transparency** | README, docstrings, per-run JSON event logs, `experiments/` directory, LLM-generated reports in `report/` |
-| **Model Quality & Robustness** | 3-model comparison + StratifiedKFold CV; sklearn Pipeline prevents leakage |
+| **Model Quality & Robustness** | 3-model comparison + StratifiedKFold CV; leakage suspects and ID columns flagged by Validator and dropped by Engineer |
 | **Benchmarking & Deployment** | ModelMetrics (MSE/RMSE/MAE/R²) + AgentEvaluator; saved `.pkl` model; Kaggle submission CSV |
 
 ---
@@ -204,6 +208,7 @@ Model assignments per agent (see `config.py`):
 ```
 experiments/
   <run_id>/
+    validation_report_*.json  — Validator output (schema, leakage, drop candidates)
     plan_<id>.json            — Planner output
     eda_<id>.json             — Explorer EDA report
     feature_decisions_*.json  — Engineer decisions

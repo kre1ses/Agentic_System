@@ -132,6 +132,91 @@ class ExperimentStore:
             )
         return "\n".join(lines)
 
+    def to_kb_chunks(self) -> list[dict]:
+        """
+        Export this run's results as structured knowledge chunks for RAG.
+
+        Returns a list of chunk dicts (text, source, tags) that can be
+        passed to KnowledgeBase.learn_from_experiment().  Future runs
+        will retrieve these to warm-start model and feature decisions.
+        """
+        chunks: list[dict] = []
+        run_id = self.run_id
+
+        # ── Best model results ───────────────────────────────────────
+        for event in self.get_events("model_result"):
+            p = event.get("payload", {})
+            model = p.get("model", "unknown")
+            mse   = p.get("cv_mse_mean")
+            rmse  = p.get("cv_rmse_mean")
+            r2    = p.get("holdout_metrics", {}).get("r2")
+            drop  = p.get("drop_columns", [])
+            if mse is None:
+                continue
+            text = (
+                f"Experiment {run_id}: model={model} achieved "
+                f"CV MSE={mse:.4f}, CV RMSE={rmse:.4f}"
+                + (f", holdout R²={r2:.4f}" if r2 is not None else "")
+                + (f". Dropped columns: {drop}." if drop else ".")
+            )
+            chunks.append({
+                "text": text,
+                "source": f"experiment:{run_id}",
+                "tags": ["experiment", "model_selection", "regression", "evaluation"],
+            })
+
+        # ── Feature decisions ────────────────────────────────────────
+        for event in self.get_events("feature_decisions"):
+            p = event.get("payload", {}).get("decisions", {})
+            if not p:
+                continue
+            parts = []
+            if p.get("drop_columns"):
+                parts.append(f"dropped: {p['drop_columns']}")
+            if p.get("log_transform_columns"):
+                parts.append(f"log-transformed: {p['log_transform_columns']}")
+            if p.get("encode_columns"):
+                parts.append(f"encoded: {p['encode_columns']}")
+            if p.get("scale_columns"):
+                parts.append(f"scaled: {p['scale_columns']}")
+            if parts:
+                text = (
+                    f"Experiment {run_id} feature engineering: "
+                    + "; ".join(parts) + "."
+                )
+                chunks.append({
+                    "text": text,
+                    "source": f"experiment:{run_id}",
+                    "tags": ["experiment", "feature_engineering", "regression"],
+                })
+
+        # ── Validation findings ──────────────────────────────────────
+        for event in self.get_events("validation_report"):
+            p = event.get("payload", {})
+            suspects = [s["column"] for s in p.get("leakage_suspects", [])
+                        if s.get("severity") == "high_leakage_risk"]
+            drops = p.get("drop_candidates", [])
+            parts = []
+            if suspects:
+                parts.append(f"high-leakage columns: {suspects}")
+            if drops:
+                parts.append(f"ID/constant/empty drop candidates: {drops}")
+            skew = p.get("target_stats", {}).get("skewness")
+            if skew is not None and abs(skew) > 1:
+                parts.append(f"target skewness={skew:.2f} — consider log-transform")
+            if parts:
+                text = (
+                    f"Experiment {run_id} validation findings: "
+                    + "; ".join(parts) + "."
+                )
+                chunks.append({
+                    "text": text,
+                    "source": f"experiment:{run_id}",
+                    "tags": ["experiment", "validation", "leakage", "regression"],
+                })
+
+        return chunks
+
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------

@@ -32,6 +32,7 @@ ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 MODELS_BY_PROVIDER = {
     # Anthropic Claude — best quality, paid
     "anthropic": {
+        "validator":   "claude-haiku-4-5-20251001",
         "planner":     "claude-sonnet-4-6",
         "explorer":    "claude-haiku-4-5-20251001",
         "engineer":    "claude-haiku-4-5-20251001",
@@ -42,8 +43,9 @@ MODELS_BY_PROVIDER = {
     },
     # OpenRouter — free open-source tier (verified available 2026-03)
     # 70B for complex reasoning (Planner, Critic, Coordinator, Reporter)
-    # 24B for high-throughput tool-calling agents (Explorer, Engineer, Builder)
+    # 24B for high-throughput tool-calling agents (Validator, Explorer, Engineer, Builder)
     "openrouter": {
+        "validator":   "mistralai/mistral-small-3.1-24b-instruct:free",
         "planner":     "meta-llama/llama-3.3-70b-instruct:free",
         "explorer":    "mistralai/mistral-small-3.1-24b-instruct:free",
         "engineer":    "mistralai/mistral-small-3.1-24b-instruct:free",
@@ -54,6 +56,7 @@ MODELS_BY_PROVIDER = {
     },
     # VseGPT (youragents.me) — Russian proxy for many models
     "vsegpt": {
+        "validator":   "mistralai/mistral-small-3.1-24b-instruct",
         "planner":     "openai/o3-mini",
         "explorer":    "mistralai/mistral-small-3.1-24b-instruct",
         "engineer":    "mistralai/mistral-small-3.1-24b-instruct",
@@ -63,6 +66,7 @@ MODELS_BY_PROVIDER = {
         "reporter":    "openai/o3-mini",
     },
     "huggingface": {
+        "validator":   "meta-llama/Llama-3.1-8B-Instruct",
         "planner":     "Qwen/Qwen2.5-72B-Instruct",
         "explorer":    "meta-llama/Llama-3.1-8B-Instruct",
         "engineer":    "meta-llama/Llama-3.1-8B-Instruct",
@@ -73,7 +77,8 @@ MODELS_BY_PROVIDER = {
     },
     # Fallback / no-LLM mode
     "none": {role: "none" for role in
-             ["planner", "explorer", "engineer", "builder", "critic", "coordinator"]},
+             ["validator", "planner", "explorer", "engineer",
+              "builder", "critic", "coordinator"]},
 }
 
 import os as _os

@@ -50,7 +50,7 @@ class BuilderAgent(BaseAgent):
 
         raw = self.run(
             prompt,
-            rag_query="model selection gradient boosting cross-validation ROC-AUC tabular",
+            rag_query="regression model selection LightGBM gradient boosting MSE KFold cross-validation hyperparameters tabular",
         )
         recommendation = self._parse_recommendation(raw)
 

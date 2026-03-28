@@ -43,7 +43,7 @@ class PlannerAgent(BaseAgent):
             "and submission file generation. "
             "Output ONLY valid JSON with key 'plan'."
         )
-        raw = self.run(prompt, rag_query="regression pipeline planning MSE feature engineering model selection")
+        raw = self.run(prompt, rag_query="regression pipeline planning MSE rental occupancy feature engineering gradient boosting")
         # Parse JSON from response
         plan = self._parse_plan(raw)
         self.store.log_plan(plan, agent=self.name)
