@@ -107,6 +107,7 @@ export HF_TOKEN=hf_...
 ### 2.2. Set your Kaggle API token
 
 Make sure, you have accepted rules of the competition before you run the code.
+!!! Sometimes KAGGLE_API_TOKEN can expire due to very long evaluation, so, be ready to submit the result by yourself.
 
 ```bash
 export KAGGLE_API_TOKEN=...
