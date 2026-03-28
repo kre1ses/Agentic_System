@@ -1,6 +1,6 @@
-# Multi-Agent Binary Classification System
+# Multi-Agent  System
 
-Intelligent multi-agent system for automated binary classification on tabular (Kaggle-format) datasets.
+Intelligent multi-agent system for automated regression task on tabular (Kaggle-format) datasets.
 Implements the full **Planner → Explorer → Engineer → Builder ↔ Critic** pipeline using the Anthropic Claude API.
 
 ---

@@ -1,5 +1,5 @@
 """
-Multi-Agent Binary Classification System
+Multi-Agent System
 =========================================
 
 Entry point for the full Planner-Explorer-Engineer-Builder-Critic pipeline.
@@ -19,7 +19,7 @@ from pathlib import Path
 # Ensure project root is on sys.path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from config import ANTHROPIC_API_KEY, TARGET_COL, TEST_PATH, TRAIN_PATH
+from config import ACTIVE_LLM_PROVIDER, TARGET_COL, TEST_PATH, TRAIN_PATH
 from evaluation.agent_eval import AgentEvaluator
 from evaluation.metrics import ModelMetrics
 from memory.experiment_store import ExperimentStore
@@ -75,10 +75,10 @@ def run_pipeline(dataset_path: str, target_col: str,
     print(f"\n  Knowledge base: {len(kb)} chunks indexed")
     print(f"  Experiment store: run_id={store.run_id}")
 
-    if not ANTHROPIC_API_KEY:
-        print("\n  [!] ANTHROPIC_API_KEY not set.")
+    if ACTIVE_LLM_PROVIDER == "none":
+        print("\n  [!] No LLM API key detected.")
         print("      Running in rule-based (no-LLM) mode.")
-        print("      Set the env var for full agent reasoning.\n")
+        print("      Set OPENROUTER_API_KEY / ANTHROPIC_API_KEY for full agent reasoning.\n")
 
     # Validate inputs
     from safety.guardrails import Guardrails

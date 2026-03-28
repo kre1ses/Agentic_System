@@ -22,15 +22,69 @@ TARGET_COL = "target"
 # Claude API
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 
-# Model assignments per agent role (balance quality vs cost)
-MODELS = {
-    "planner":     "claude-sonnet-4-6",
-    "explorer":    "claude-haiku-4-5-20251001",
-    "engineer":    "claude-haiku-4-5-20251001",
-    "builder":     "claude-haiku-4-5-20251001",
-    "critic":      "claude-sonnet-4-6",
-    "coordinator": "claude-sonnet-4-6",
+# ── Model assignments per agent role ─────────────────────────────────────────
+# Each provider section lists the recommended model per agent.
+# Rationale: complex-reasoning agents (Planner, Critic, Coordinator) get the
+# largest available model; high-throughput agents (Explorer, Engineer, Builder)
+# get a smaller/faster model to reduce latency and cost.
+
+MODELS_BY_PROVIDER = {
+    # Anthropic Claude — best quality, paid
+    "anthropic": {
+        "planner":     "claude-sonnet-4-6",
+        "explorer":    "claude-haiku-4-5-20251001",
+        "engineer":    "claude-haiku-4-5-20251001",
+        "builder":     "claude-haiku-4-5-20251001",
+        "critic":      "claude-sonnet-4-6",
+        "coordinator": "claude-sonnet-4-6",
+        "reporter":    "claude-sonnet-4-6",
+    },
+    # OpenRouter — free open-source tier (verified available 2026-03)
+    # 70B for complex reasoning (Planner, Critic, Coordinator, Reporter)
+    # 24B for high-throughput tool-calling agents (Explorer, Engineer, Builder)
+    "openrouter": {
+        "planner":     "meta-llama/llama-3.3-70b-instruct:free",
+        "explorer":    "mistralai/mistral-small-3.1-24b-instruct:free",
+        "engineer":    "mistralai/mistral-small-3.1-24b-instruct:free",
+        "builder":     "mistralai/mistral-small-3.1-24b-instruct:free",
+        "critic":      "meta-llama/llama-3.3-70b-instruct:free",
+        "coordinator": "meta-llama/llama-3.3-70b-instruct:free",
+        "reporter":    "meta-llama/llama-3.3-70b-instruct:free",
+    },
+    # VseGPT (youragents.me) — Russian proxy for many models
+    "vsegpt": {
+        "planner":     "openai/o3-mini",
+        "explorer":    "mistralai/mistral-small-3.1-24b-instruct",
+        "engineer":    "mistralai/mistral-small-3.1-24b-instruct",
+        "builder":     "mistralai/mistral-small-3.1-24b-instruct",
+        "critic":      "openai/o3-mini",
+        "coordinator": "openai/o3-mini",
+        "reporter":    "openai/o3-mini",
+    },
+    "huggingface": {
+        "planner":     "Qwen/Qwen2.5-72B-Instruct",
+        "explorer":    "meta-llama/Llama-3.1-8B-Instruct",
+        "engineer":    "meta-llama/Llama-3.1-8B-Instruct",
+        "builder":     "meta-llama/Llama-3.1-8B-Instruct",
+        "critic":      "Qwen/Qwen2.5-72B-Instruct",
+        "coordinator": "Qwen/Qwen2.5-72B-Instruct",
+        "reporter":    "Qwen/Qwen2.5-72B-Instruct",
+    },
+    # Fallback / no-LLM mode
+    "none": {role: "none" for role in
+             ["planner", "explorer", "engineer", "builder", "critic", "coordinator"]},
 }
+
+import os as _os
+_provider = _os.environ.get("LLM_PROVIDER", "").lower() or (
+    "anthropic"   if _os.environ.get("ANTHROPIC_API_KEY")  else
+    "openrouter"  if _os.environ.get("OPENROUTER_API_KEY") else
+    "vsegpt"      if _os.environ.get("VSEGPT_API_KEY")     else
+    "huggingface" if _os.environ.get("HF_TOKEN")           else
+    "none"
+)
+MODELS = MODELS_BY_PROVIDER.get(_provider, MODELS_BY_PROVIDER["none"])
+ACTIVE_LLM_PROVIDER = _provider
 
 # Agent behaviour
 MAX_CRITIQUE_ROUNDS = 2

@@ -17,6 +17,7 @@ from agents.critic import CriticAgent
 from agents.engineer import EngineerAgent
 from agents.explorer import ExplorerAgent
 from agents.planner import PlannerAgent
+from agents.reporter import ReporterAgent
 from config import MAX_CRITIQUE_ROUNDS, MODELS
 from memory.experiment_store import ExperimentStore
 from rag.knowledge_base import KnowledgeBase
@@ -40,6 +41,7 @@ class CoordinatorAgent(BaseAgent):
         self._engineer = EngineerAgent(kb=self.kb, store=self.store, verbose=verbose)
         self._builder = BuilderAgent(kb=self.kb, store=self.store, verbose=verbose)
         self._critic = CriticAgent(kb=self.kb, store=self.store, verbose=verbose)
+        self._reporter = ReporterAgent(kb=self.kb, store=self.store, verbose=verbose)
 
     # ------------------------------------------------------------------
     # Main entry point
@@ -52,7 +54,7 @@ class CoordinatorAgent(BaseAgent):
         Run the full pipeline and return a results summary.
         """
         print(f"\n{'='*60}")
-        print(f"  Multi-Agent Binary Classification System")
+        print(f"  Multi-Agent Regression Task System")
         print(f"  Dataset : {dataset_path}")
         print(f"  Target  : {target_col}")
         print(f"  Run ID  : {self.store.run_id}")
@@ -99,11 +101,12 @@ class CoordinatorAgent(BaseAgent):
                   f"mean={submission_result.get('pred_mean')} | "
                   f"std={submission_result.get('pred_std')}")
 
-        # ── Phase 6: Final Report ────────────────────────────────────
-        self._phase("6. Final Report")
+        # ── Phase 6: LLM-generated Reports ──────────────────────────
+        self._phase("6. Generating LLM Reports")
         report = self._compile_report(eda_report, feature_decisions,
                                        final_result, submission_result)
         self._print_report(report)
+        self._write_reports(dataset_path, target_col, report, eda_report)
 
         return report
 
@@ -171,6 +174,33 @@ class CoordinatorAgent(BaseAgent):
             "submission": submission_result or {},
             "run_summary": self.store.get_run_summary(),
         }
+
+    def _write_reports(self, dataset_path: str, target_col: str,
+                        report: dict, eda_report: dict):
+        """Call ReporterAgent to generate both Markdown reports via LLM."""
+        from tools.ml_tools import MLTools
+        try:
+            comparison   = MLTools.compare_models(dataset_path, target_col)
+            importances  = MLTools.feature_importance(dataset_path, target_col)
+        except Exception as e:
+            print(f"  [reporter] Could not fetch ML data: {e}")
+            comparison  = report.get("holdout_metrics", {})
+            importances = {}
+
+        target_stats = eda_report.get("target_distribution", {})
+        missing_stats = eda_report.get("missing_values", {})
+        experiment_summary = report.get("run_summary", {})
+
+        try:
+            self._reporter.write_models_report(
+                experiment_summary=experiment_summary,
+                model_comparison=comparison,
+                feature_importances=importances,
+                target_stats=target_stats,
+                missing_stats=missing_stats,
+            )
+        except Exception as e:
+            print(f"  [reporter] models.md failed: {e}")
 
     # ------------------------------------------------------------------
     # Printing helpers

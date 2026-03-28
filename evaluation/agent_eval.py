@@ -44,15 +44,15 @@ class AgentEvaluator:
         )
 
         # ── Metric 2: Model improvement across iterations ────────────
-        auc_scores = []
+        mse_scores = []
         for e in model_events:
-            auc = e["payload"].get("cv_roc_auc_mean")
-            if auc is not None:
-                auc_scores.append(float(auc))
-        best_auc = max(auc_scores) if auc_scores else None
-        auc_improvement = (
-            round(auc_scores[-1] - auc_scores[0], 4)
-            if len(auc_scores) >= 2 else None
+            mse = e["payload"].get("cv_mse_mean")
+            if mse is not None:
+                mse_scores.append(float(mse))
+        best_mse = min(mse_scores) if mse_scores else None
+        mse_improvement = (
+            round(mse_scores[0] - mse_scores[-1], 2)
+            if len(mse_scores) >= 2 else None
         )
 
         # ── Metric 3: Plan adherence ─────────────────────────────────
@@ -81,9 +81,9 @@ class AgentEvaluator:
             },
             "models": {
                 "experiments_run": len(model_events),
-                "auc_trajectory": auc_scores,
-                "best_cv_roc_auc": best_auc,
-                "auc_improvement": auc_improvement,
+                "mse_trajectory": mse_scores,
+                "best_cv_mse": best_mse,
+                "mse_improvement": mse_improvement,
             },
             "planning": {
                 "planned_steps": planned_steps,
@@ -110,8 +110,8 @@ class AgentEvaluator:
             "",
             "### Model Performance",
             f"- Experiments run: {report['models']['experiments_run']}",
-            f"- Best CV ROC-AUC: {report['models']['best_cv_roc_auc']}",
-            f"- AUC improvement: {report['models']['auc_improvement']}",
+            f"- Best CV MSE: {report['models']['best_cv_mse']}",
+            f"- MSE improvement: {report['models']['mse_improvement']}",
             "",
             "### Agent Participation",
         ]

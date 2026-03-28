@@ -5,6 +5,7 @@ from .engineer import EngineerAgent
 from .builder import BuilderAgent
 from .critic import CriticAgent
 from .coordinator import CoordinatorAgent
+from .reporter import ReporterAgent
 
 __all__ = [
     "BaseAgent",
@@ -14,4 +15,5 @@ __all__ = [
     "BuilderAgent",
     "CriticAgent",
     "CoordinatorAgent",
+    "ReporterAgent",
 ]
