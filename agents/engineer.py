@@ -16,12 +16,18 @@ class EngineerAgent(BaseAgent):
             "You are a senior ML feature engineer. "
             "Given an EDA report, decide: "
             "(1) which columns to drop (high missingness, identifiers, leakage), "
-            "(2) encoding strategy per categorical feature, "
-            "(3) numeric transformations (log, binning, scaling), "
-            "(4) any interaction features worth creating. "
+            "(2) encoding strategy per categorical feature "
+            "(high-cardinality → target encoding with CV smoothing; low-cardinality → ordinal), "
+            "(3) numeric transformations (log1p for right-skewed columns with min≥0, "
+            "binning for non-linear relationships, StandardScaler for linear models), "
+            "(4) interaction features worth creating (e.g. price×availability, "
+            "reviews_per_month×age_days), "
+            "(5) whether the target distribution is zero-inflated "
+            "(many exact zeros → flag two_stage_recommended=true). "
             "Output your decisions as a JSON object with keys: "
             "'drop_columns', 'encode_columns', 'scale_columns', "
-            "'log_transform_columns', 'notes'. "
+            "'log_transform_columns', 'interaction_features', "
+            "'two_stage_recommended', 'notes'. "
             "Be concise and justify each decision."
         )
         self._ml = MLTools()
@@ -75,10 +81,12 @@ class EngineerAgent(BaseAgent):
 
         prompt += (
             "Decide on the feature engineering strategy. "
-            "Also call prepare_features to confirm column types. "
+            "Call prepare_features to check column types, zero-fraction, and "
+            "whether a two-stage model is recommended. "
             "Output ONLY valid JSON with keys: "
             "drop_columns, encode_columns, scale_columns, "
-            "log_transform_columns, notes."
+            "log_transform_columns, interaction_features, "
+            "two_stage_recommended, notes."
         )
 
         raw = self.run(
@@ -106,5 +114,7 @@ class EngineerAgent(BaseAgent):
                 "encode_columns": [],
                 "scale_columns": [],
                 "log_transform_columns": [],
+                "interaction_features": [],
+                "two_stage_recommended": False,
                 "notes": raw[:500],
             }

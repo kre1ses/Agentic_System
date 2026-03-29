@@ -33,7 +33,8 @@ class HuggingFaceBackend:
 
     def create(self, model: str, system: str,
                messages: list[dict], tools: list[dict],
-               max_tokens: int = MAX_TOKENS) -> FakeResponse:
+               max_tokens: int = MAX_TOKENS,
+               fallback_model: str | None = None) -> FakeResponse:
         """Call HF Inference API and return a FakeResponse."""
         from llm.openai_compat_backend import OpenAICompatBackend
 

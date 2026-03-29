@@ -9,7 +9,7 @@ import json
 import time
 from typing import Any
 
-from config import MAX_TOKENS, MAX_TOOL_CALLS, MAX_TOOL_RETRIES
+from config import MAX_TOKENS, MAX_TOOL_CALLS, MAX_TOOL_RETRIES, MODELS_FALLBACK
 from llm.factory import get_llm_client
 from memory.experiment_store import ExperimentStore
 from rag.knowledge_base import KnowledgeBase
@@ -43,6 +43,8 @@ class BaseAgent:
         self.tools: list[dict] = []
         self._dispatchers: list[Any] = []
         self._client = get_llm_client()     # None → rule-based fallback
+        # Resolved after subclass sets self.name (see _resolve_fallback_model)
+        self._fallback_model: str | None = None
 
     # ------------------------------------------------------------------
     # Core run method (ReAct loop — provider-agnostic)
@@ -60,6 +62,8 @@ class BaseAgent:
 
         messages: list[dict] = [{"role": "user", "content": user_message}]
 
+        fallback = MODELS_FALLBACK.get(self.name.lower())
+
         for attempt in range(MAX_TOOL_RETRIES + 1):
             try:
                 response = self._client.create(
@@ -68,6 +72,7 @@ class BaseAgent:
                     messages=messages,
                     tools=self.tools or [],
                     max_tokens=MAX_TOKENS,
+                    fallback_model=fallback,
                 )
             except Exception as e:
                 self._log(f"API error: {e}", level="error")
@@ -105,6 +110,7 @@ class BaseAgent:
                     messages=messages,
                     tools=self.tools or [],
                     max_tokens=MAX_TOKENS,
+                    fallback_model=fallback,
                 )
 
             final_text = self._extract_text(response)

@@ -49,7 +49,8 @@ class OpenAICompatBackend:
 
     def create(self, model: str, system: str,
                messages: list[dict], tools: list[dict],
-               max_tokens: int = MAX_TOKENS) -> FakeResponse:
+               max_tokens: int = MAX_TOKENS,
+               fallback_model: str | None = None) -> FakeResponse:
         oai_messages = self._to_oai_messages(system, messages)
         oai_tools    = self._to_oai_tools(tools) if tools else None
 
@@ -63,8 +64,11 @@ class OpenAICompatBackend:
         if self._extra_headers:
             kwargs["extra_headers"] = self._extra_headers
 
-        # Try primary model, then fallbacks on 429
-        candidates = [model] + [m for m in _FALLBACK_MODELS if m != model]
+        # Build candidate list: agent-specific fallback first, then generic pool
+        agent_fallbacks = [fallback_model] if fallback_model and fallback_model != model else []
+        generic_fallbacks = [m for m in _FALLBACK_MODELS if m != model and m not in agent_fallbacks]
+        candidates = [model] + agent_fallbacks + generic_fallbacks
+
         last_error: Exception | None = None
         for attempt, candidate in enumerate(candidates):
             try:
@@ -78,7 +82,7 @@ class OpenAICompatBackend:
                 err_str = str(e)
                 if "429" in err_str or "rate" in err_str.lower():
                     wait = min(4 * (attempt + 1), 30)
-                    print(f"    [llm] 429 on {candidate}, waiting {wait}s...")
+                    print(f"    [llm] 429 on {candidate}, waiting {wait}s…")
                     time.sleep(wait)
                     last_error = e
                     continue

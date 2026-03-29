@@ -22,3 +22,4 @@ seaborn>=0.12.0
 kaggle
 rank_bm25
 catboost
+optuna

@@ -81,6 +81,49 @@ MODELS_BY_PROVIDER = {
               "builder", "critic", "coordinator"]},
 }
 
+# ── Fallback models per agent (used when primary model rate-limits or errors) ─
+# Smaller / more available model tried after primary exhausts retries.
+MODELS_FALLBACK_BY_PROVIDER = {
+    "anthropic": {
+        "validator":   "claude-haiku-4-5-20251001",
+        "planner":     "claude-haiku-4-5-20251001",
+        "explorer":    "claude-haiku-4-5-20251001",
+        "engineer":    "claude-haiku-4-5-20251001",
+        "builder":     "claude-haiku-4-5-20251001",
+        "critic":      "claude-haiku-4-5-20251001",
+        "coordinator": "claude-haiku-4-5-20251001",
+        "reporter":    "claude-haiku-4-5-20251001",
+    },
+    "openrouter": {
+        "validator":   "qwen/qwen3-4b:free",
+        "planner":     "mistralai/mistral-small-3.1-24b-instruct:free",
+        "explorer":    "qwen/qwen3-4b:free",
+        "engineer":    "qwen/qwen3-4b:free",
+        "builder":     "qwen/qwen3-4b:free",
+        "critic":      "mistralai/mistral-small-3.1-24b-instruct:free",
+        "coordinator": "mistralai/mistral-small-3.1-24b-instruct:free",
+        "reporter":    "mistralai/mistral-small-3.1-24b-instruct:free",
+    },
+    "vsegpt": {
+        "validator":   "mistralai/mistral-small-3.1-24b-instruct",
+        "planner":     "mistralai/mistral-small-3.1-24b-instruct",
+        "explorer":    "mistralai/mistral-small-3.1-24b-instruct",
+        "engineer":    "mistralai/mistral-small-3.1-24b-instruct",
+        "builder":     "mistralai/mistral-small-3.1-24b-instruct",
+        "critic":      "mistralai/mistral-small-3.1-24b-instruct",
+        "coordinator": "mistralai/mistral-small-3.1-24b-instruct",
+        "reporter":    "mistralai/mistral-small-3.1-24b-instruct",
+    },
+    "huggingface": {
+        role: "Qwen/Qwen2.5-7B-Instruct"
+        for role in ["validator", "planner", "explorer", "engineer",
+                     "builder", "critic", "coordinator", "reporter"]
+    },
+    "none": {role: "none" for role in
+             ["validator", "planner", "explorer", "engineer",
+              "builder", "critic", "coordinator", "reporter"]},
+}
+
 import os as _os
 _provider = _os.environ.get("LLM_PROVIDER", "").lower() or (
     "anthropic"   if _os.environ.get("ANTHROPIC_API_KEY")  else
@@ -90,6 +133,7 @@ _provider = _os.environ.get("LLM_PROVIDER", "").lower() or (
     "none"
 )
 MODELS = MODELS_BY_PROVIDER.get(_provider, MODELS_BY_PROVIDER["none"])
+MODELS_FALLBACK = MODELS_FALLBACK_BY_PROVIDER.get(_provider, {})
 ACTIVE_LLM_PROVIDER = _provider
 
 # Agent behaviour
@@ -107,3 +151,7 @@ RAG_TOP_K = 5
 # Task type
 TASK_TYPE = "regression"          # "regression" | "binary_classification"
 EVAL_METRICS = ["mse", "rmse", "mae", "r2"]
+
+# Two-stage modelling: if fraction of zeros in target exceeds this, Builder
+# is advised to try the "two_stage" model type (classifier + regressor).
+TWO_STAGE_ZERO_THRESHOLD = 0.15

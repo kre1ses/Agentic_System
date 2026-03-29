@@ -425,5 +425,71 @@
       "leakage",
       "regression"
     ]
+  },
+  {
+    "text": "Experiment 20260329_115201: model=ensemble achieved CV MSE=10518.1456, CV RMSE=102.5580, holdout R\u00b2=0.3815.",
+    "source": "experiment:20260329_115201",
+    "tags": [
+      "experiment",
+      "model_selection",
+      "regression",
+      "evaluation"
+    ]
+  },
+  {
+    "text": "Experiment 20260329_115201: model=ensemble achieved CV MSE=10109.5101, CV RMSE=100.5461, holdout R\u00b2=0.4030.",
+    "source": "experiment:20260329_115201",
+    "tags": [
+      "experiment",
+      "model_selection",
+      "regression",
+      "evaluation"
+    ]
+  },
+  {
+    "text": "Experiment 20260329_115201 feature engineering: dropped: ['name', '_id', 'last_dt']; log-transformed: ['amt_reviews']; encoded: {'location_cluster': 'one_hot', 'location': 'target_encoding', 'type_house': 'ordinal'}; scaled: ['lat', 'lon', 'sum', 'min_days', 'amt_reviews', 'avg_reviews', 'total_host', 'days_since_last_review', 'last_review_year', 'last_review_month', 'last_review_dow', 'last_review_quarter', 'last_review_is_weekend', 'last_review_month_sin', 'last_review_month_cos', 'last_review_dow_sin', 'last_review_dow_cos'].",
+    "source": "experiment:20260329_115201",
+    "tags": [
+      "experiment",
+      "feature_engineering",
+      "regression"
+    ]
+  },
+  {
+    "text": "Experiment 20260329_115201 feature engineering: dropped: ['name', '_id', 'last_dt']; log-transformed: ['amt_reviews']; encoded: {'location_cluster': 'one_hot', 'location': 'target_encoding', 'type_house': 'target_encoding'}; scaled: ['lat', 'lon', 'sum', 'min_days', 'amt_reviews', 'avg_reviews', 'total_host', 'days_since_last_review', 'last_review_year', 'last_review_month', 'last_review_dow', 'last_review_quarter', 'last_review_is_weekend', 'last_review_month_sin', 'last_review_month_cos', 'last_review_dow_sin', 'last_review_dow_cos'].",
+    "source": "experiment:20260329_115201",
+    "tags": [
+      "experiment",
+      "feature_engineering",
+      "regression"
+    ]
+  },
+  {
+    "text": "Experiment 20260329_115201 feature engineering: dropped: ['name', '_id', 'last_dt']; log-transformed: ['amt_reviews']; encoded: {'location_cluster': 'one_hot', 'location': 'target_encoding', 'type_house': 'ordinal'}; scaled: ['lat', 'lon', 'sum', 'min_days', 'amt_reviews', 'avg_reviews', 'total_host', 'days_since_last_review'].",
+    "source": "experiment:20260329_115201",
+    "tags": [
+      "experiment",
+      "feature_engineering",
+      "regression"
+    ]
+  },
+  {
+    "text": "Experiment 20260329_115201 feature engineering: dropped: ['name', '_id']; log-transformed: ['amt_reviews']; encoded: {'location_cluster': 'one_hot', 'location': 'target_encoding_cv', 'type_house': 'target_encoding_cv'}; scaled: ['lat', 'lon', 'sum', 'min_days', 'amt_reviews', 'avg_reviews', 'total_host', 'days_since_last_review', 'last_review_year', 'last_review_month', 'last_review_dow', 'last_review_quarter', 'last_review_is_weekend', 'last_review_month_sin', 'last_review_month_cos', 'last_review_dow_sin', 'last_review_dow_cos'].",
+    "source": "experiment:20260329_115201",
+    "tags": [
+      "experiment",
+      "feature_engineering",
+      "regression"
+    ]
+  },
+  {
+    "text": "Experiment 20260329_115201 validation findings: ID/constant/empty drop candidates: ['name', '_id'].",
+    "source": "experiment:20260329_115201",
+    "tags": [
+      "experiment",
+      "validation",
+      "leakage",
+      "regression"
+    ]
   }
 ]

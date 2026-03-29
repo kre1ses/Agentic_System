@@ -5,6 +5,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
 from sklearn.impute import SimpleImputer
@@ -31,6 +32,13 @@ try:
     _CB_AVAILABLE = True
 except ImportError:
     _CB_AVAILABLE = False
+
+try:
+    import optuna
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+    _OPTUNA_AVAILABLE = True
+except ImportError:
+    _OPTUNA_AVAILABLE = False
 
 from config import MODELS_DIR
 
@@ -272,41 +280,162 @@ def _build_model(model_name: str):
     if model_name == "random_forest":
         return RandomForestRegressor(
             n_estimators=300, max_features=0.5,
-            min_samples_leaf=5, random_state=42, n_jobs=-1
+            min_samples_leaf=5, random_state=42, n_jobs=-1,
         )
     if model_name == "gradient_boosting":
         return GradientBoostingRegressor(
             n_estimators=500, learning_rate=0.05,
             max_depth=5, subsample=0.8,
-            min_samples_leaf=10, random_state=42
+            min_samples_leaf=10, random_state=42,
         )
     if model_name == "lightgbm":
         if not _LGB_AVAILABLE:
             raise ImportError("lightgbm is not installed")
         return lgb.LGBMRegressor(
-            n_estimators=1000, learning_rate=0.05,
-            num_leaves=63, subsample=0.8, colsample_bytree=0.8,
-            min_child_samples=20, reg_alpha=0.1, reg_lambda=1.0,
-            random_state=42, n_jobs=-1, verbose=-1,
+            n_estimators=2000, learning_rate=0.03,
+            num_leaves=127, max_depth=-1,
+            min_child_samples=20, subsample=0.8, subsample_freq=1,
+            colsample_bytree=0.8, reg_alpha=0.1, reg_lambda=1.0,
+            min_split_gain=0.01, random_state=42, n_jobs=-1, verbose=-1,
         )
     if model_name == "xgboost":
         if not _XGB_AVAILABLE:
             raise ImportError("xgboost is not installed")
         return XGBRegressor(
-            n_estimators=1000, learning_rate=0.05,
-            max_depth=6, subsample=0.8, colsample_bytree=0.8,
-            reg_alpha=0.1, reg_lambda=1.0,
+            n_estimators=2000, learning_rate=0.03,
+            max_depth=6, min_child_weight=5,
+            subsample=0.8, colsample_bytree=0.8, colsample_bylevel=0.8,
+            reg_alpha=0.1, reg_lambda=1.0, gamma=0.0,
             random_state=42, n_jobs=-1, verbosity=0,
         )
     if model_name == "catboost":
         if not _CB_AVAILABLE:
             raise ImportError("catboost is not installed")
         return CatBoostRegressor(
-            random_seed=42, 
-            thread_count=-1,
-            verbose=0,
+            iterations=2000, learning_rate=0.03,
+            depth=6, l2_leaf_reg=3.0,
+            min_data_in_leaf=20, random_strength=1.0,
+            bagging_temperature=1.0, od_type="Iter", od_wait=50,
+            random_seed=42, thread_count=-1, verbose=0,
         )
+    if model_name == "ensemble":
+        return _EnsembleRegressor()
+    if model_name == "two_stage":
+        base = "lightgbm" if _LGB_AVAILABLE else (
+            "xgboost" if _XGB_AVAILABLE else "gradient_boosting"
+        )
+        return _TwoStageRegressor(base_model_name=base)
     raise ValueError(f"Unknown model: {model_name}")
+
+
+def _build_classifier(model_name: str):
+    """Return a binary classifier for the two-stage model."""
+    if model_name == "lightgbm" and _LGB_AVAILABLE:
+        return lgb.LGBMClassifier(
+            n_estimators=500, learning_rate=0.05,
+            num_leaves=63, subsample=0.8, colsample_bytree=0.8,
+            min_child_samples=20, reg_alpha=0.1, reg_lambda=1.0,
+            random_state=42, n_jobs=-1, verbose=-1,
+        )
+    if model_name == "xgboost" and _XGB_AVAILABLE:
+        from xgboost import XGBClassifier
+        return XGBClassifier(
+            n_estimators=500, learning_rate=0.05, max_depth=6,
+            subsample=0.8, colsample_bytree=0.8,
+            reg_alpha=0.1, reg_lambda=1.0,
+            random_state=42, n_jobs=-1, verbosity=0,
+        )
+    if model_name == "catboost" and _CB_AVAILABLE:
+        from catboost import CatBoostClassifier
+        return CatBoostClassifier(
+            iterations=500, learning_rate=0.05, depth=6,
+            random_seed=42, thread_count=-1, verbose=0,
+        )
+    from sklearn.ensemble import GradientBoostingClassifier
+    return GradientBoostingClassifier(
+        n_estimators=300, learning_rate=0.05, max_depth=5,
+        subsample=0.8, random_state=42,
+    )
+
+
+def _is_zero_inflated(y: pd.Series, threshold: float = 0.15) -> bool:
+    """Return True if the fraction of exact-zero values exceeds *threshold*."""
+    return float((y == 0).mean()) > threshold
+
+
+# ── Composite regressors ──────────────────────────────────────────────────────
+
+class _EnsembleRegressor(BaseEstimator, RegressorMixin):
+    """
+    Equal-weight average of all installed boosting models
+    (LightGBM + XGBoost + CatBoost; falls back to GBM when none available).
+    Works as the final step in a sklearn Pipeline.
+    """
+
+    def fit(self, X, y):
+        self.regressors_: list = []
+        for name in ["lightgbm", "xgboost", "catboost"]:
+            # Only include if the lib is installed
+            try:
+                m = _build_model(name)
+                m.fit(X, y)
+                self.regressors_.append(m)
+            except (ImportError, ValueError):
+                pass
+        if not self.regressors_:
+            m = _build_model("gradient_boosting")
+            m.fit(X, y)
+            self.regressors_.append(m)
+        return self
+
+    def predict(self, X):
+        preds = np.array([m.predict(X) for m in self.regressors_])
+        return preds.mean(axis=0)
+
+
+class _TwoStageRegressor(BaseEstimator, RegressorMixin):
+    """
+    Two-stage model for zero-inflated regression targets.
+
+    Stage 1 — binary classifier: P(y > 0 | X).
+    Stage 2 — regressor trained only on rows where y > 0.
+    Final prediction: P(y > 0) * reg_pred(X).
+
+    Works as the final step in a sklearn Pipeline, so X is already
+    preprocessed (numeric, no NaNs).
+    """
+
+    def __init__(self, base_model_name: str = "lightgbm"):
+        self.base_model_name = base_model_name
+
+    def fit(self, X, y):
+        y = np.asarray(y)
+        y_bin = (y > 0).astype(int)
+
+        # Stage 1
+        self.clf_ = _build_classifier(self.base_model_name)
+        self.clf_.fit(X, y_bin)
+
+        # Stage 2 — positive subset only
+        mask = y > 0
+        if mask.sum() >= 10:
+            # boolean indexing works for both numpy arrays and pandas DataFrames
+            X_pos = X[mask]
+            self.reg_ = _build_model(self.base_model_name)
+            self.reg_.fit(X_pos, y[mask])
+            self.global_pos_mean_ = float(y[mask].mean())
+        else:
+            self.reg_ = None
+            self.global_pos_mean_ = float(y.mean())
+        return self
+
+    def predict(self, X):
+        proba = self.clf_.predict_proba(X)[:, 1]   # P(y > 0)
+        if self.reg_ is not None:
+            reg_pred = self.reg_.predict(X)
+        else:
+            reg_pred = np.full(len(proba), self.global_pos_mean_)
+        return proba * reg_pred
 
 
 def _should_log_target(y: pd.Series) -> bool:
@@ -341,18 +470,112 @@ def _build_full_pipeline(
     return X_train, X_test, y_enc, log_transformed, high_card
 
 
+# ── Optuna helpers ────────────────────────────────────────────────────────────
+
+#: Models that have a defined Optuna search space
+TUNABLE_MODELS: list[str] = (
+    ["ridge", "random_forest", "gradient_boosting"]
+    + (["lightgbm"]  if _LGB_AVAILABLE  else [])
+    + (["xgboost"]   if _XGB_AVAILABLE  else [])
+    + (["catboost"]  if _CB_AVAILABLE   else [])
+)
+
+
+def _suggest_params(trial, model_name: str) -> dict:
+    """Return Optuna-suggested hyperparameters for *model_name*."""
+    if model_name == "ridge":
+        return {"alpha": trial.suggest_float("alpha", 0.01, 100.0, log=True)}
+    if model_name == "random_forest":
+        return {
+            "n_estimators":     trial.suggest_int("n_estimators", 100, 500, step=50),
+            "max_features":     trial.suggest_float("max_features", 0.3, 1.0),
+            "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 20),
+            "min_samples_split":trial.suggest_int("min_samples_split", 2, 20),
+            "max_depth":        trial.suggest_int("max_depth", 5, 30),
+        }
+    if model_name == "gradient_boosting":
+        return {
+            "n_estimators":     trial.suggest_int("n_estimators", 100, 1000, step=50),
+            "learning_rate":    trial.suggest_float("learning_rate", 0.01, 0.2, log=True),
+            "max_depth":        trial.suggest_int("max_depth", 3, 8),
+            "subsample":        trial.suggest_float("subsample", 0.5, 1.0),
+            "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 20),
+        }
+    if model_name == "lightgbm":
+        return {
+            "n_estimators":      trial.suggest_int("n_estimators", 300, 3000, step=100),
+            "learning_rate":     trial.suggest_float("learning_rate", 0.01, 0.1, log=True),
+            "num_leaves":        trial.suggest_int("num_leaves", 31, 255),
+            "max_depth":         trial.suggest_int("max_depth", 3, 12),
+            "min_child_samples": trial.suggest_int("min_child_samples", 5, 100),
+            "subsample":         trial.suggest_float("subsample", 0.5, 1.0),
+            "colsample_bytree":  trial.suggest_float("colsample_bytree", 0.5, 1.0),
+            "reg_alpha":         trial.suggest_float("reg_alpha", 1e-3, 10.0, log=True),
+            "reg_lambda":        trial.suggest_float("reg_lambda", 1e-3, 10.0, log=True),
+        }
+    if model_name == "xgboost":
+        return {
+            "n_estimators":     trial.suggest_int("n_estimators", 300, 3000, step=100),
+            "learning_rate":    trial.suggest_float("learning_rate", 0.01, 0.1, log=True),
+            "max_depth":        trial.suggest_int("max_depth", 3, 10),
+            "min_child_weight": trial.suggest_int("min_child_weight", 1, 20),
+            "subsample":        trial.suggest_float("subsample", 0.5, 1.0),
+            "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
+            "reg_alpha":        trial.suggest_float("reg_alpha", 1e-3, 10.0, log=True),
+            "reg_lambda":       trial.suggest_float("reg_lambda", 1e-3, 10.0, log=True),
+            "gamma":            trial.suggest_float("gamma", 0.0, 5.0),
+        }
+    if model_name == "catboost":
+        return {
+            "iterations":          trial.suggest_int("iterations", 300, 3000, step=100),
+            "learning_rate":       trial.suggest_float("learning_rate", 0.01, 0.1, log=True),
+            "depth":               trial.suggest_int("depth", 4, 10),
+            "l2_leaf_reg":         trial.suggest_float("l2_leaf_reg", 1.0, 10.0, log=True),
+            "min_data_in_leaf":    trial.suggest_int("min_data_in_leaf", 1, 50),
+            "bagging_temperature": trial.suggest_float("bagging_temperature", 0.0, 2.0),
+            "random_strength":     trial.suggest_float("random_strength", 0.0, 2.0),
+        }
+    raise ValueError(f"No Optuna param space for model: {model_name}")
+
+
+def _build_model_with_params(model_name: str, params: dict):
+    """Instantiate a model with custom *params* (from Optuna or manual)."""
+    if model_name == "ridge":
+        return Ridge(**params)
+    if model_name == "random_forest":
+        return RandomForestRegressor(**params, random_state=42, n_jobs=-1)
+    if model_name == "gradient_boosting":
+        return GradientBoostingRegressor(**params, random_state=42)
+    if model_name == "lightgbm":
+        if not _LGB_AVAILABLE:
+            raise ImportError("lightgbm is not installed")
+        return lgb.LGBMRegressor(
+            **params, subsample_freq=1, random_state=42, n_jobs=-1, verbose=-1
+        )
+    if model_name == "xgboost":
+        if not _XGB_AVAILABLE:
+            raise ImportError("xgboost is not installed")
+        return XGBRegressor(**params, random_state=42, n_jobs=-1, verbosity=0)
+    if model_name == "catboost":
+        if not _CB_AVAILABLE:
+            raise ImportError("catboost is not installed")
+        return CatBoostRegressor(**params, random_seed=42, thread_count=-1, verbose=0)
+    raise ValueError(f"Unknown model: {model_name}")
+
+
 # ── Main tools class ──────────────────────────────────────────────────────────
 
 class MLTools:
     """Regression pipeline utilities exposed as agent tools."""
 
+    # Base single models
     AVAILABLE_MODELS: list[str] = ["ridge", "random_forest", "gradient_boosting"] + (
         ["lightgbm"] if _LGB_AVAILABLE else []
     ) + (
         ["xgboost"] if _XGB_AVAILABLE else []
     ) + (
         ["catboost"] if _CB_AVAILABLE else []
-    )
+    ) + ["ensemble", "two_stage"]
 
     @staticmethod
     def prepare_features(path: str, target_col: str,
@@ -363,7 +586,10 @@ class MLTools:
         num_cols = X.select_dtypes(include=[np.number]).columns.tolist()
         cat_cols = X.select_dtypes(exclude=[np.number]).columns.tolist()
         high_card = [c for c in cat_cols if X[c].nunique() > 10]
-        log_target = _should_log_target(df[target_col]) if target_col in df.columns else False
+        y = df[target_col] if target_col in df.columns else None
+        log_target  = _should_log_target(y) if y is not None else False
+        zero_frac   = float((y == 0).mean()) if y is not None else 0.0
+        recommend_two_stage = _is_zero_inflated(y) if y is not None else False
         return {
             "feature_columns": list(X.columns),
             "numeric_columns": num_cols,
@@ -372,6 +598,8 @@ class MLTools:
             "n_samples": len(df),
             "n_features": len(X.columns),
             "recommend_log_target": log_target,
+            "target_zero_fraction": round(zero_frac, 4),
+            "recommend_two_stage": recommend_two_stage,
             "available_models": MLTools.AVAILABLE_MODELS,
         }
 
@@ -581,15 +809,114 @@ class MLTools:
         }
 
     @staticmethod
+    def tune_hyperparameters(
+        path: str,
+        target_col: str,
+        model_name: str,
+        drop_cols: list[str] | None = None,
+        n_trials: int = 30,
+        cv_folds: int = 5,
+    ) -> dict[str, Any]:
+        """
+        Run Optuna (TPE sampler) to minimise CV MSE for *model_name*.
+        Returns best_params, CV metrics, holdout metrics, and saves the tuned model.
+        Only single models are supported (not 'ensemble' / 'two_stage').
+        """
+        if not _OPTUNA_AVAILABLE:
+            return {"error": "optuna is not installed — run: pip install optuna"}
+        if model_name not in TUNABLE_MODELS:
+            return {
+                "error": f"'{model_name}' is not tunable. Supported: {TUNABLE_MODELS}"
+            }
+
+        df = pd.read_csv(path)
+        X_full = _prepare_X(df, target_col, drop_cols)
+        y_full = df[target_col]
+
+        def objective(trial):
+            params = _suggest_params(trial, model_name)
+            kf = KFold(n_splits=cv_folds, shuffle=True, random_state=42)
+            mse_scores = []
+            for tr_idx, val_idx in kf.split(X_full):
+                X_cv_tr  = X_full.iloc[tr_idx].copy()
+                X_cv_val = X_full.iloc[val_idx].copy()
+                y_cv_tr  = y_full.iloc[tr_idx]
+                y_cv_val = y_full.iloc[val_idx]
+
+                X_tr_enc, X_val_enc, y_enc, log_cv, _ = _build_full_pipeline(
+                    X_cv_tr, y_cv_tr, X_cv_val, model_name
+                )
+                pre = _build_preprocessor(X_tr_enc)
+                reg = _build_model_with_params(model_name, params)
+                pl  = Pipeline([("pre", pre), ("reg", reg)])
+                pl.fit(X_tr_enc, y_enc)
+
+                raw  = pl.predict(X_val_enc)
+                pred = np.expm1(raw) if log_cv else raw
+                pred = np.clip(pred, 0, 365)
+                mse_scores.append(mean_squared_error(y_cv_val, pred))
+            return float(np.mean(mse_scores))
+
+        study = optuna.create_study(
+            direction="minimize",
+            sampler=optuna.samplers.TPESampler(seed=42),
+        )
+        study.optimize(objective, n_trials=n_trials, show_progress_bar=False)
+
+        best_params  = study.best_params
+        best_cv_mse  = study.best_value
+
+        # Final holdout evaluation with best params
+        X_tr, X_te, y_tr, y_te = train_test_split(
+            X_full, y_full, test_size=0.2, random_state=42
+        )
+        X_tr_enc, X_te_enc, y_enc, log_t, _ = _build_full_pipeline(
+            X_tr, y_tr, X_te, model_name
+        )
+        pre      = _build_preprocessor(X_tr_enc)
+        reg      = _build_model_with_params(model_name, best_params)
+        pipeline = Pipeline([("pre", pre), ("reg", reg)])
+        pipeline.fit(X_tr_enc, y_enc)
+
+        raw_pred = pipeline.predict(X_te_enc)
+        y_pred   = np.expm1(raw_pred) if log_t else raw_pred
+        y_pred   = np.clip(y_pred, 0, 365)
+
+        holdout = {
+            "mse":  round(float(mean_squared_error(y_te, y_pred)), 4),
+            "rmse": round(float(np.sqrt(mean_squared_error(y_te, y_pred))), 4),
+            "mae":  round(float(mean_absolute_error(y_te, y_pred)), 4),
+            "r2":   round(float(r2_score(y_te, y_pred)), 4),
+        }
+
+        model_path = MODELS_DIR / f"{model_name}_tuned.pkl"
+        with open(model_path, "wb") as f:
+            pickle.dump(
+                {"pipeline": pipeline, "log_transformed": log_t, "best_params": best_params}, f
+            )
+
+        return {
+            "model": model_name,
+            "best_params":   best_params,
+            "best_cv_mse":   round(best_cv_mse, 4),
+            "best_cv_rmse":  round(float(np.sqrt(best_cv_mse)), 4),
+            "holdout_metrics": holdout,
+            "n_trials":      n_trials,
+            "model_path":    str(model_path),
+        }
+
+    @staticmethod
     def get_tool_definitions() -> list[dict]:
         available = MLTools.AVAILABLE_MODELS
+        default_model = "lightgbm" if _LGB_AVAILABLE else "gradient_boosting"
         return [
             {
                 "name": "prepare_features",
                 "description": (
                     "Summarise feature types after date extraction, missing indicators, "
-                    "and ID dropping. Also reports high-cardinality columns and whether "
-                    "log-transform of target is recommended."
+                    "and ID dropping. Reports high-cardinality columns, whether "
+                    "log-transform of target is recommended, target zero-fraction, "
+                    "and whether a two-stage model is recommended."
                 ),
                 "input_schema": {
                     "type": "object",
@@ -606,7 +933,10 @@ class MLTools:
                 "description": (
                     "Train a regressor with 5-fold CV and return MSE/RMSE/MAE/R2. "
                     "Automatically applies target encoding, log-target transform, "
-                    "and missing indicators."
+                    "and missing indicators. "
+                    "Special model_name values: "
+                    "'ensemble' trains LGB+XGB+CatBoost and averages predictions (often best); "
+                    "'two_stage' trains a binary classifier + regressor for zero-inflated targets."
                 ),
                 "input_schema": {
                     "type": "object",
@@ -616,7 +946,7 @@ class MLTools:
                         "model_name": {
                             "type": "string",
                             "enum": available,
-                            "default": "lightgbm" if _LGB_AVAILABLE else "gradient_boosting",
+                            "default": default_model,
                         },
                         "drop_cols": {"type": "array", "items": {"type": "string"}, "default": []},
                         "test_size": {"type": "number", "default": 0.2},
@@ -627,7 +957,11 @@ class MLTools:
             },
             {
                 "name": "compare_models",
-                "description": f"Compare all available regressors ({', '.join(available)}) by CV MSE.",
+                "description": (
+                    f"Compare regressors ({', '.join(available)}) by CV MSE. "
+                    "Includes 'ensemble' (LGB+XGB+CatBoost) and 'two_stage' "
+                    "(classifier+regressor for zero-inflated targets)."
+                ),
                 "input_schema": {
                     "type": "object",
                     "properties": {
@@ -653,6 +987,36 @@ class MLTools:
                 },
             },
             {
+                "name": "tune_hyperparameters",
+                "description": (
+                    "Use Optuna (Bayesian TPE) to find optimal hyperparameters for a single model. "
+                    "Minimises CV MSE over n_trials trials, then evaluates on holdout and saves "
+                    "the tuned model as <model>_tuned.pkl. "
+                    f"Supported models: {', '.join(TUNABLE_MODELS)}. "
+                    "Call this AFTER compare_models to fine-tune the best single model. "
+                    "Returns best_params, best_cv_mse/rmse, and holdout metrics."
+                ),
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "path":       {"type": "string", "description": "Path to the CSV training dataset"},
+                        "target_col": {"type": "string"},
+                        "model_name": {
+                            "type": "string",
+                            "enum": TUNABLE_MODELS,
+                        },
+                        "drop_cols":  {"type": "array", "items": {"type": "string"}, "default": []},
+                        "n_trials":   {
+                            "type": "integer",
+                            "default": 30,
+                            "description": "Number of Optuna trials — more = better, but slower",
+                        },
+                        "cv_folds":   {"type": "integer", "default": 5},
+                    },
+                    "required": ["path", "target_col", "model_name"],
+                },
+            },
+            {
                 "name": "generate_submission",
                 "description": "Train on full train set, predict test set, save submission CSV.",
                 "input_schema": {
@@ -661,7 +1025,11 @@ class MLTools:
                         "train_path":    {"type": "string"},
                         "test_path":     {"type": "string"},
                         "target_col":    {"type": "string"},
-                        "model_name":    {"type": "string", "default": "lightgbm"},
+                        "model_name":    {
+                            "type": "string",
+                            "enum": available,
+                            "default": default_model,
+                        },
                         "drop_cols":     {"type": "array", "items": {"type": "string"}, "default": []},
                         "output_path":   {"type": "string", "default": "submission.csv"},
                     },
